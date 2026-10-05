@@ -4,26 +4,28 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Encuéntrame — psicólogos y pacientes</title>
+<link rel="icon" type="image/png" href="logo/favicon-64.png">
+<link rel="apple-touch-icon" href="logo/simbolo-512.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #F1F4EA;
+    --bg: #F7F4EE;
     --surface: #FFFFFF;
-    --surface-2: #E7ECDD;
-    --ink: #1D2A20;
-    --ink-secondary: #55645A;
-    --ink-muted: #8A968B;
-    --primary: #33604D;
-    --primary-strong: #234438;
-    --on-primary: #F6F8F1;
-    --accent: #7C5FB5;
-    --accent-bg: #EEE9F8;
-    --warm: #C98A4B;
-    --warm-bg: #F6E8D6;
-    --border: rgba(29, 42, 32, 0.14);
-    --border-strong: rgba(29, 42, 32, 0.26);
+    --surface-2: #EEE8DE;
+    --ink: #14263A;
+    --ink-secondary: #4F5D6B;
+    --ink-muted: #8A949F;
+    --primary: #2A7272;
+    --primary-strong: #0B2A45;
+    --on-primary: #F7F4EE;
+    --accent: #C8714A;
+    --accent-bg: #F6E3D8;
+    --warm: #C8714A;
+    --warm-bg: #F7E6DA;
+    --border: rgba(20, 38, 58, 0.14);
+    --border-strong: rgba(20, 38, 58, 0.26);
     --danger: #A6433A;
     --danger-bg: #F6E1DE;
     --radius: 14px;
@@ -33,42 +35,42 @@
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #10160F;
-      --surface: #182019;
-      --surface-2: #212B21;
-      --ink: #E7EDE4;
-      --ink-secondary: #ABB6A6;
-      --ink-muted: #7C887A;
-      --primary: #5C9B82;
-      --primary-strong: #7DB79D;
-      --on-primary: #0E1712;
-      --accent: #B39EE3;
-      --accent-bg: #2A2440;
-      --warm: #D9A467;
-      --warm-bg: #3A2E1C;
-      --border: rgba(231, 237, 228, 0.16);
-      --border-strong: rgba(231, 237, 228, 0.28);
+      --bg: #0C1622;
+      --surface: #13202F;
+      --surface-2: #1B2A3B;
+      --ink: #E9EEF2;
+      --ink-secondary: #AAB6C2;
+      --ink-muted: #7D8A97;
+      --primary: #5FB0AA;
+      --primary-strong: #8FD0C9;
+      --on-primary: #08141F;
+      --accent: #E39A76;
+      --accent-bg: #3A2419;
+      --warm: #E39A76;
+      --warm-bg: #3A2419;
+      --border: rgba(233, 238, 242, 0.16);
+      --border-strong: rgba(233, 238, 242, 0.28);
       --danger: #E39B92;
       --danger-bg: #3A211E;
     }
   }
 
   :root[data-theme="dark"] {
-    --bg: #10160F;
-    --surface: #182019;
-    --surface-2: #212B21;
-    --ink: #E7EDE4;
-    --ink-secondary: #ABB6A6;
-    --ink-muted: #7C887A;
-    --primary: #5C9B82;
-    --primary-strong: #7DB79D;
-    --on-primary: #0E1712;
-    --accent: #B39EE3;
-    --accent-bg: #2A2440;
-    --warm: #D9A467;
-    --warm-bg: #3A2E1C;
-    --border: rgba(231, 237, 228, 0.16);
-    --border-strong: rgba(231, 237, 228, 0.28);
+    --bg: #0C1622;
+    --surface: #13202F;
+    --surface-2: #1B2A3B;
+    --ink: #E9EEF2;
+    --ink-secondary: #AAB6C2;
+    --ink-muted: #7D8A97;
+    --primary: #5FB0AA;
+    --primary-strong: #8FD0C9;
+    --on-primary: #08141F;
+    --accent: #E39A76;
+    --accent-bg: #3A2419;
+    --warm: #E39A76;
+    --warm-bg: #3A2419;
+    --border: rgba(233, 238, 242, 0.16);
+    --border-strong: rgba(233, 238, 242, 0.28);
     --danger: #E39B92;
     --danger-bg: #3A211E;
   }
@@ -136,13 +138,13 @@
   }
 
   .brand-mark {
-    width: 30px; height: 30px;
+    width: 38px; height: 38px;
     border-radius: 50%;
-    background: var(--primary);
+    background: #F7F4EE;
     display: flex; align-items: center; justify-content: center;
-    color: var(--on-primary);
-    font-size: 15px;
+    box-shadow: 0 0 0 1px var(--border);
   }
+  .brand-mark img { width: 32px; height: 32px; display: block; }
 
   .btn {
     display: inline-flex;
@@ -515,7 +517,7 @@
     "Autoestima", "Trauma", "Trastornos del sueño"
   ];
 
-  var AVATAR_COLORS = ["#33604D", "#7C5FB5", "#C98A4B", "#4A7FA6", "#A6433A", "#5C8A3E"];
+  var AVATAR_COLORS = ["#2A7272", "#0B2A45", "#C8714A", "#4A7FA6", "#8C5A7A", "#5C8A6E"];
 
   function safeGet(key, fallback) {
     try {
@@ -829,7 +831,7 @@
   function topbar(showBack) {
     return (
       '<div class="topbar">' +
-        '<button class="brand" data-action="go-landing"><span class="brand-mark">◐</span>Encuéntrame</button>' +
+        '<button class="brand" data-action="go-landing"><span class="brand-mark"><img src="logo/simbolo-512.png" alt=""></span>Encuéntrame</button>' +
         (showBack ? '<button class="btn btn-ghost btn-sm" data-action="go-landing">Volver al inicio</button>' : '') +
       '</div>'
     );
@@ -1093,7 +1095,7 @@
   function appTopbar(nombre, rolLabel) {
     return (
       '<div class="app-top">' +
-        '<button class="brand" data-action="go-landing"><span class="brand-mark">◐</span>Encuéntrame</button>' +
+        '<button class="brand" data-action="go-landing"><span class="brand-mark"><img src="logo/simbolo-512.png" alt=""></span>Encuéntrame</button>' +
         '<div class="who"><div>' +
           '<span>' + escapeHtml(nombre) + '</span><small>' + rolLabel + '</small>' +
         '</div><button class="btn btn-sm btn-ghost" data-action="logout">Salir</button></div>' +
