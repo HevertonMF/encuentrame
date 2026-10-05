@@ -1,0 +1,1318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Encuéntrame — psicólogos y pacientes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F1F4EA;
+    --surface: #FFFFFF;
+    --surface-2: #E7ECDD;
+    --ink: #1D2A20;
+    --ink-secondary: #55645A;
+    --ink-muted: #8A968B;
+    --primary: #33604D;
+    --primary-strong: #234438;
+    --on-primary: #F6F8F1;
+    --accent: #7C5FB5;
+    --accent-bg: #EEE9F8;
+    --warm: #C98A4B;
+    --warm-bg: #F6E8D6;
+    --border: rgba(29, 42, 32, 0.14);
+    --border-strong: rgba(29, 42, 32, 0.26);
+    --danger: #A6433A;
+    --danger-bg: #F6E1DE;
+    --radius: 14px;
+    --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+    --font-body: 'Karla', system-ui, -apple-system, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #10160F;
+      --surface: #182019;
+      --surface-2: #212B21;
+      --ink: #E7EDE4;
+      --ink-secondary: #ABB6A6;
+      --ink-muted: #7C887A;
+      --primary: #5C9B82;
+      --primary-strong: #7DB79D;
+      --on-primary: #0E1712;
+      --accent: #B39EE3;
+      --accent-bg: #2A2440;
+      --warm: #D9A467;
+      --warm-bg: #3A2E1C;
+      --border: rgba(231, 237, 228, 0.16);
+      --border-strong: rgba(231, 237, 228, 0.28);
+      --danger: #E39B92;
+      --danger-bg: #3A211E;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #10160F;
+    --surface: #182019;
+    --surface-2: #212B21;
+    --ink: #E7EDE4;
+    --ink-secondary: #ABB6A6;
+    --ink-muted: #7C887A;
+    --primary: #5C9B82;
+    --primary-strong: #7DB79D;
+    --on-primary: #0E1712;
+    --accent: #B39EE3;
+    --accent-bg: #2A2440;
+    --warm: #D9A467;
+    --warm-bg: #3A2E1C;
+    --border: rgba(231, 237, 228, 0.16);
+    --border-strong: rgba(231, 237, 228, 0.28);
+    --danger: #E39B92;
+    --danger-bg: #3A211E;
+  }
+
+  * { box-sizing: border-box; }
+
+  html {
+    scroll-padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.55;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 500; margin: 0; }
+
+  a { color: inherit; }
+
+  button, input, select, textarea { font-family: var(--font-body); font-size: 15px; color: var(--ink); }
+
+  button { cursor: pointer; }
+
+  ::selection { background: var(--accent-bg); }
+
+  #app { min-height: 100%; }
+
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: var(--ink);
+    padding: 0;
+  }
+
+  .brand-mark {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--primary);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--on-primary);
+    font-size: 15px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    color: var(--ink);
+    font-weight: 600;
+    font-size: 14px;
+    transition: background .15s ease, transform .1s ease;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn:active { transform: scale(.97); }
+
+  .btn-primary {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--on-primary);
+  }
+  .btn-primary:hover { background: var(--primary-strong); border-color: var(--primary-strong); }
+
+  .btn-ghost {
+    border-color: transparent;
+    background: transparent;
+  }
+  .btn-ghost:hover { background: var(--surface-2); }
+
+  .btn-danger-outline {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: transparent;
+  }
+  .btn-danger-outline:hover { background: var(--danger-bg); }
+
+  .btn-sm { padding: 7px 14px; font-size: 13px; }
+  .btn-block { width: 100%; }
+
+  /* Landing */
+  .hero {
+    padding: 72px 0 56px;
+    text-align: center;
+  }
+  .hero h1 {
+    font-size: clamp(32px, 5vw, 52px);
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .hero p {
+    margin: 18px auto 0;
+    max-width: 480px;
+    color: var(--ink-secondary);
+    font-size: 16px;
+  }
+
+  .role-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin: 40px auto 0;
+    max-width: 720px;
+  }
+  @media (max-width: 620px) {
+    .role-grid { grid-template-columns: 1fr; }
+  }
+
+  .role-card {
+    text-align: left;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 26px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color .15s ease, transform .1s ease;
+  }
+  .role-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+
+  .role-icon {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px;
+  }
+  .role-icon.pat { background: var(--warm-bg); color: var(--warm); }
+  .role-icon.psi { background: var(--accent-bg); color: var(--accent); }
+
+  .role-card h3 { font-size: 20px; }
+  .role-card p { margin: 0; color: var(--ink-secondary); font-size: 14px; }
+
+  .foot-note {
+    max-width: 560px;
+    margin: 52px auto 0;
+    padding: 16px 18px;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius);
+    color: var(--ink-secondary);
+    font-size: 13px;
+    text-align: left;
+  }
+  .foot-note strong { color: var(--ink); }
+
+  /* Auth */
+  .auth-shell {
+    max-width: 460px;
+    margin: 48px auto 60px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 30px 28px 26px;
+  }
+  .auth-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-2);
+    padding: 4px;
+    border-radius: 999px;
+    margin-bottom: 22px;
+  }
+  .auth-tab {
+    flex: 1;
+    text-align: center;
+    padding: 9px 0;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: var(--ink-secondary);
+    font-weight: 600;
+    font-size: 13px;
+  }
+  .auth-tab.active { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--border); }
+
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-secondary);
+    margin-bottom: 6px;
+  }
+  .field input[type=text],
+  .field input[type=email],
+  .field input[type=password],
+  .field input[type=tel],
+  .field textarea,
+  .field select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: 9px;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  .field textarea { resize: vertical; min-height: 74px; }
+  .field-hint { font-size: 12px; color: var(--ink-muted); margin-top: 5px; }
+  .field-error { font-size: 12.5px; color: var(--danger); margin-top: 5px; }
+
+  .tag-check-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .tag-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    background: var(--surface);
+  }
+  .tag-check input { accent-color: var(--primary); }
+  .tag-check.on { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+  .photo-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .avatar {
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 500;
+    flex-shrink: 0;
+    background-size: cover;
+    background-position: center;
+    color: #fff;
+  }
+
+  /* App shell (dashboards) */
+  .app-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .app-top .who { display: flex; align-items: center; gap: 10px; }
+  .app-top .who span { font-weight: 600; font-size: 14px; }
+  .app-top .who small { display: block; color: var(--ink-secondary); font-size: 12px; }
+
+  .tabbar {
+    display: flex;
+    gap: 6px;
+    margin: 22px 0 26px;
+    border-bottom: 1px solid var(--border);
+  }
+  .tabbtn {
+    padding: 10px 4px;
+    margin-right: 22px;
+    border: none;
+    background: none;
+    color: var(--ink-secondary);
+    font-weight: 600;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .tabbtn.active { color: var(--ink); border-bottom-color: var(--primary); }
+
+  .search-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .search-row input[type=text] {
+    flex: 1;
+    min-width: 180px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+  }
+
+  .chip-filter {
+    padding: 7px 13px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    font-size: 13px;
+    color: var(--ink-secondary);
+  }
+  .chip-filter.on { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+
+  .psi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .psi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .psi-card .head { display: flex; gap: 12px; align-items: center; }
+  .psi-card h3 { font-size: 17px; }
+  .psi-card .bio-snip { color: var(--ink-secondary); font-size: 13px; margin: 0; }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag {
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--accent-bg);
+    color: var(--accent);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--ink-secondary);
+  }
+  .empty-state h3 { font-size: 18px; color: var(--ink); margin-bottom: 6px; }
+
+  /* Modal (in-flow, per authoring rules — no position:fixed reliance for layout collapse issues, but overlay works fine on full page artifacts) */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 14, 9, 0.55);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+    z-index: 50;
+  }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    max-width: 520px;
+    width: 100%;
+    padding: 28px;
+    margin-top: env(safe-area-inset-top, 0px);
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+
+  .detail-avatar-row { display: flex; gap: 16px; align-items: center; margin-bottom: 14px; }
+  .contact-line { display: flex; gap: 8px; font-size: 13.5px; color: var(--ink-secondary); margin-top: 3px; }
+
+  .req-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .req-item .meta { color: var(--ink-secondary); font-size: 12.5px; margin-bottom: 6px; }
+  .req-item .resumen { font-size: 14px; margin: 6px 0 10px; }
+  .status-pill {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+  .status-pill.pend { background: var(--warm-bg); color: var(--warm); }
+  .status-pill.cont { background: var(--accent-bg); color: var(--accent); }
+
+  .banner {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    margin-bottom: 16px;
+  }
+  .banner.ok { background: var(--accent-bg); color: var(--accent); }
+  .banner.err { background: var(--danger-bg); color: var(--danger); }
+
+  .card-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    max-width: 560px;
+  }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+  @media (max-width: 520px) { .two-col { grid-template-columns: 1fr; } }
+
+  .footer-space { height: 60px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var ESPECIALIDADES = [
+    "Duelo", "Depresión", "Ansiedad", "Terapia de pareja",
+    "Terapia infantil y adolescente", "Adicciones", "Estrés y burnout",
+    "Autoestima", "Trauma", "Trastornos del sueño"
+  ];
+
+  var AVATAR_COLORS = ["#33604D", "#7C5FB5", "#C98A4B", "#4A7FA6", "#A6433A", "#5C8A3E"];
+
+  function safeGet(key, fallback) {
+    try {
+      var raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+  function safeSet(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  var KEY_PSI = "psiapp_psicologos";
+  var KEY_PAC = "psiapp_pacientes";
+  var KEY_SOL = "psiapp_solicitudes";
+  var KEY_SESSION = "psiapp_session";
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function hashPassword(pw) {
+    var h = 5381;
+    for (var i = 0; i < pw.length; i++) {
+      h = ((h << 5) + h) + pw.charCodeAt(i);
+      h = h & h;
+    }
+    return "d" + h;
+  }
+
+  function initials(nombre) {
+    var parts = nombre.trim().split(/\s+/);
+    var a = parts[0] ? parts[0][0] : "";
+    var b = parts[1] ? parts[1][0] : "";
+    return (a + b).toUpperCase() || "?";
+  }
+
+  function colorFor(nombre) {
+    var sum = 0;
+    for (var i = 0; i < nombre.length; i++) sum += nombre.charCodeAt(i);
+    return AVATAR_COLORS[sum % AVATAR_COLORS.length];
+  }
+
+  function avatarHtml(nombre, fotoDataUrl, size) {
+    size = size || 44;
+    var style = "width:" + size + "px;height:" + size + "px;font-size:" + Math.round(size * 0.38) + "px;";
+    if (fotoDataUrl) {
+      style += "background-image:url(" + JSON.stringify(fotoDataUrl) + ");";
+      return '<div class="avatar" style="' + style + '"></div>';
+    }
+    style += "background:" + colorFor(nombre) + ";";
+    return '<div class="avatar" style="' + style + '">' + escapeHtml(initials(nombre)) + '</div>';
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function fmtFecha(iso) {
+    try {
+      var d = new Date(iso);
+      return d.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" });
+    } catch (e) {
+      return "";
+    }
+  }
+
+  // ---------- Seed data ----------
+  function seedIfEmpty() {
+    var psi = safeGet(KEY_PSI, null);
+    if (psi === null) {
+      psi = [
+        {
+          id: uid(), nombre: "Marta Ibáñez", email: "marta.ibanez@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Duelo", "Depresión", "Trauma"],
+          bio: "Trabajo desde un enfoque cercano y sin prisas, acompañando procesos de pérdida y duelo. Más de diez años ayudando a personas a atravesar momentos difíciles.",
+          contactoEmail: "marta.ibanez@ejemplo.com", contactoTelefono: "+34 611 222 333"
+        },
+        {
+          id: uid(), nombre: "Diego Fonseca", email: "diego.fonseca@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Ansiedad", "Estrés y burnout", "Trastornos del sueño"],
+          bio: "Especializado en ansiedad y estrés laboral. Utilizo herramientas prácticas para que notes cambios desde las primeras sesiones.",
+          contactoEmail: "diego.fonseca@ejemplo.com", contactoTelefono: "+34 622 333 444"
+        },
+        {
+           id: uid(), nombre: "Laura Campos", email: "laura.campos@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Terapia de pareja", "Autoestima"],
+          bio: "Acompaño a parejas e individuos a mejorar su comunicación y su relación consigo mismos, en un espacio sin juicios.",
+          contactoEmail: "laura.campos@ejemplo.com", contactoTelefono: "+34 633 444 555"
+        },
+        {
+          id: uid(), nombre: "Diego Fonseca", email: "diego.fonseca@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Ansiedad", "Estrés y burnout", "Trastornos del sueño"],
+          bio: "Especializado en ansiedad y estrés laboral. Utilizo herramientas prácticas para que notes cambios desde las primeras sesiones.",
+          contactoEmail: "diego.fonseca@ejemplo.com", contactoTelefono: "+34 622 333 444"
+        },
+        {
+          id: uid(), nombre: "Marta Sánchez", email: "marta.sanchez@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Trastornos alimentarios", "Autoestima"],
+          bio: "Trabajo con un enfoque integrador para trastornos de la conducta alimentaria y la imagen corporal, desde la autocompasión.",
+          contactoEmail: "marta.sanchez@ejemplo.com", contactoTelefono: "+34 644 555 666"
+        },
+        {
+          id: uid(), nombre: "Javier Romero", email: "javier.romero@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Adicciones", "Control de impulsos"],
+          bio: "Especialista en adicciones y control de impulsos, con un enfoque práctico y sin juicios.",
+          contactoEmail: "javier.romero@ejemplo.com", contactoTelefono: "+34 655 666 777"
+        },
+        {
+          id: uid(), nombre: "Elena Vidal", email: "elena.vidal@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Ansiedad", "Fobias", "Ataques de pánico"],
+          bio: "Uso técnicas de exposición gradual y respiración para reducir crisis de ansiedad y fobias.",
+          contactoEmail: "elena.vidal@ejemplo.com", contactoTelefono: "+34 666 777 888"
+        },
+        {
+          id: uid(), nombre: "Ruben Castillo", email: "ruben.castillo@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Terapia infantil", "TDAH"],
+          bio: "Trabajo con niños y adolescentes en problemas de conducta y TDAH junto con sus familias.",
+          contactoEmail: "ruben.castillo@ejemplo.com", contactoTelefono: "+34 677 888 999"
+        },
+        {
+          id: uid(), nombre: "Sofía Navarro", email: "sofia.navarro@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Trastornos del sueño", "Ansiedad"],
+          bio: "Combino técnicas de higiene del sueño y manejo del estrés para mejorar el descanso.",
+          contactoEmail: "sofia.navarro@ejemplo.com", contactoTelefono: "+34 688 999 000"
+        },
+        {
+          id: uid(), nombre: "Pablo Herrera", email: "pablo.herrera@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Trauma", "Duelo"],
+          bio: "Especializado en trauma y EMDR, acompañando procesos de recuperación a tu propio ritmo.",
+          contactoEmail: "pablo.herrera@ejemplo.com", contactoTelefono: "+34 699 000 111"
+        },
+        {
+          id: uid(), nombre: "Isabel Domínguez", email: "isabel.dominguez@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Autoestima", "Ansiedad social"],
+          bio: "Ayudo a construir una autoestima sólida y a superar la ansiedad en las relaciones sociales.",
+          contactoEmail: "isabel.dominguez@ejemplo.com", contactoTelefono: "+34 610 111 222"
+        },
+        {
+          id: uid(), nombre: "Andrés Molina", email: "andres.molina@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Estrés laboral", "Burnout"],
+          bio: "Trabajo con profesionales que sienten agotamiento y quieren recuperar el equilibrio.",
+          contactoEmail: "andres.molina@ejemplo.com", contactoTelefono: "+34 621 222 333"
+        },
+        {
+          id: uid(), nombre: "Cristina Ortega", email: "cristina.ortega@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Depresión", "Duelo"],
+          bio: "Acompaño con empatía procesos de tristeza profunda y pérdida hacia una vida con sentido.",
+          contactoEmail: "cristina.ortega@ejemplo.com", contactoTelefono: "+34 632 333 444"
+        },
+        {
+          id: uid(), nombre: "Miguel Ángel Torres", email: "miguelangel.torres@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Terapia de pareja", "Sexualidad"],
+          bio: "Especialista en terapia de pareja y sexualidad, con un enfoque respetuoso y directo.",
+          contactoEmail: "miguelangel.torres@ejemplo.com", contactoTelefono: "+34 643 444 555"
+        },
+        {
+          id: uid(), nombre: "Paula Cabrera", email: "paula.cabrera@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Ansiedad", "Trastorno obsesivo-compulsivo"],
+          bio: "Trabajo con TOC y ansiedad usando terapia cognitivo-conductual basada en evidencia.",
+          contactoEmail: "paula.cabrera@ejemplo.com", contactoTelefono: "+34 654 555 666"
+        },
+        {
+          id: uid(), nombre: "Alberto Gil", email: "alberto.gil@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Adicciones", "Trastornos del ánimo"],
+          bio: "Acompaño procesos de recuperación de adicciones con seguimiento cercano y personalizado.",
+          contactoEmail: "alberto.gil@ejemplo.com", contactoTelefono: "+34 665 666 777"
+        },
+        {
+          id: uid(), nombre: "Natalia Reyes", email: "natalia.reyes@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Terapia infantil", "Ansiedad infantil"],
+          bio: "Especialista en psicología infantil, ayudo a niños a gestionar sus emociones de forma sana.",
+          contactoEmail: "natalia.reyes@ejemplo.com", contactoTelefono: "+34 676 777 888"
+        },
+        {
+          id: uid(), nombre: "Fernando Aguilar", email: "fernando.aguilar@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Estrés y burnout", "Rendimiento"],
+          bio: "Trabajo con deportistas y profesionales de alto rendimiento para gestionar la presión.",
+          contactoEmail: "fernando.aguilar@ejemplo.com", contactoTelefono: "+34 687 888 999"
+        },
+        {
+          id: uid(), nombre: "Beatriz Serrano", email: "beatriz.serrano@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Duelo", "Acompañamiento en enfermedad"],
+          bio: "Ofrezco un espacio seguro para procesar pérdidas y enfermedades con calma y respeto.",
+          contactoEmail: "beatriz.serrano@ejemplo.com", contactoTelefono: "+34 698 999 000"
+        },
+        {
+          id: uid(), nombre: "Hugo Delgado", email: "hugo.delgado@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Ansiedad social", "Fobias"],
+          bio: "Ayudo a superar el miedo al juicio social con exposición progresiva y trabajo cognitivo.",
+          contactoEmail: "hugo.delgado@ejemplo.com", contactoTelefono: "+34 609 000 111"
+        },
+        {
+          id: uid(), nombre: "Lucía Peña", email: "lucia.pena@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Trastornos alimentarios", "Imagen corporal"],
+          bio: "Especializada en imagen corporal y hábitos alimentarios saludables desde la autocompasión.",
+          contactoEmail: "lucia.pena@ejemplo.com", contactoTelefono: "+34 620 111 222"
+        },
+        {
+          id: uid(), nombre: "Adrián Blanco", email: "adrian.blanco@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Terapia de pareja", "Divorcio"],
+          bio: "Acompaño a parejas en crisis y procesos de separación con foco en el bienestar mutuo.",
+          contactoEmail: "adrian.blanco@ejemplo.com", contactoTelefono: "+34 631 222 333"
+        },
+        {
+          id: uid(), nombre: "Laura Campos", email: "laura.campos@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Terapia de pareja", "Autoestima"],
+          bio: "Acompaño a parejas e individuos a mejorar su comunicación y su relación consigo mismos, en un espacio sin juicios.",
+          contactoEmail: "laura.campos@ejemplo.com", contactoTelefono: "+34 633 444 555"
+        },
+        {
+          id: uid(), nombre: "Samuel Reyes", email: "samuel.reyes@ejemplo.com",
+          passwordHash: hashPassword("demo1234"), fotoDataUrl: "",
+          especialidades: ["Terapia infantil y adolescente", "Adicciones"],
+          bio: "Psicólogo infantojuvenil con experiencia también en adicciones. Trabajo en estrecha coordinación con las familias.",
+          contactoEmail: "samuel.reyes@ejemplo.com", contactoTelefono: "+34 644 555 666"
+        }
+      ];
+      safeSet(KEY_PSI, psi);
+    }
+    if (safeGet(KEY_PAC, null) === null) safeSet(KEY_PAC, []);
+    if (safeGet(KEY_SOL, null) === null) safeSet(KEY_SOL, []);
+  }
+
+  // ---------- State ----------
+  var state = {
+    view: "landing",
+    authRole: "paciente",
+    authMode: "login",
+    authError: "",
+    session: safeGet(KEY_SESSION, null),
+    patientTab: "buscar",
+    psiTab: "perfil",
+    filtroEspecialidad: "",
+    filtroTexto: "",
+    detailPsiId: null,
+    requestBanner: "",
+    editingProfile: false
+  };
+
+  function setState(patch) {
+    Object.assign(state, patch);
+    render();
+  }
+
+  function logout() {
+    localStorage.removeItem(KEY_SESSION);
+    setState({ view: "landing", session: null, authError: "" });
+  }
+
+  // ---------- Views ----------
+  function viewLanding() {
+    return (
+      '<div class="wrap">' +
+        topbar(false) +
+        '<div class="hero">' +
+          '<h1>Encuentra quien te escuche.</h1>' +
+          '<p>Un espacio para conectar con psicólogos según lo que estás viviendo ahora mismo — duelo, ansiedad, pareja y más.</p>' +
+          '<div class="role-grid">' +
+            '<button class="role-card" data-action="go-auth" data-role="paciente">' +
+              '<div class="role-icon pat">☺</div>' +
+              '<h3>Busco apoyo</h3>' +
+              '<p>Explora psicólogos por especialidad y solicita una primera sesión.</p>' +
+            '</button>' +
+            '<button class="role-card" data-action="go-auth" data-role="psicologo">' +
+              '<div class="role-icon psi">✎</div>' +
+              '<h3>Soy psicólogo/a</h3>' +
+              '<p>Crea tu perfil profesional y recibe solicitudes de pacientes.</p>' +
+            '</button>' +
+          '</div>' +
+          '<div class="foot-note"><strong>Nota:</strong> esta es una versión de prueba para un proyecto de estudio. Los datos se guardan solo en este navegador — no se comparten con otras personas que abran el mismo enlace. Por favor no introduzcas contraseñas ni datos reales.</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function topbar(showBack) {
+    return (
+      '<div class="topbar">' +
+        '<button class="brand" data-action="go-landing"><span class="brand-mark">◐</span>Encuéntrame</button>' +
+        (showBack ? '<button class="btn btn-ghost btn-sm" data-action="go-landing">Volver al inicio</button>' : '') +
+      '</div>'
+    );
+  }
+
+  function viewAuth() {
+    var role = state.authRole;
+    var isReg = state.authMode === "register";
+    return (
+      '<div class="wrap">' +
+        topbar(true) +
+        '<div class="auth-shell">' +
+          '<h2 style="font-size:22px;margin-bottom:4px;">' + (role === "paciente" ? "Área de pacientes" : "Área de psicólogos") + '</h2>' +
+          '<p style="color:var(--ink-secondary);font-size:13.5px;margin:0 0 20px;">' + (role === "paciente" ? "Busca a quien mejor pueda ayudarte." : "Gestiona tu perfil y tus solicitudes.") + '</p>' +
+          '<div class="auth-tabs">' +
+            '<button class="auth-tab' + (!isReg ? " active" : "") + '" data-action="set-auth-mode" data-mode="login">Entrar</button>' +
+            '<button class="auth-tab' + (isReg ? " active" : "") + '" data-action="set-auth-mode" data-mode="register">Crear cuenta</button>' +
+          '</div>' +
+          (state.authError ? '<div class="banner err">' + escapeHtml(state.authError) + '</div>' : '') +
+          (isReg ? formRegister(role) : formLogin()) +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function formLogin() {
+    return (
+      '<form data-form="login">' +
+        '<div class="field"><label>Correo electrónico</label><input type="email" name="email" required placeholder="tucorreo@ejemplo.com"></div>' +
+        '<div class="field"><label>Contraseña</label><input type="password" name="password" required placeholder="••••••••">' +
+          '<div class="field-hint">Prototipo educativo — no uses una contraseña real.</div></div>' +
+        '<button type="submit" class="btn btn-primary btn-block">Entrar</button>' +
+        (state.authRole === "paciente" ? '<div class="field-hint" style="text-align:center;margin-top:12px;">Prueba con marta.ibanez@ejemplo.com / demo1234 para ver el panel de un psicólogo ya cargado, o crea tu propia cuenta de paciente.</div>' : '<div class="field-hint" style="text-align:center;margin-top:12px;">Prueba con marta.ibanez@ejemplo.com / demo1234</div>') +
+      '</form>'
+    );
+  }
+
+  function formRegister(role) {
+    if (role === "paciente") {
+      return (
+        '<form data-form="register-paciente">' +
+          '<div class="field"><label>Nombre</label><input type="text" name="nombre" required placeholder="Tu nombre"></div>' +
+          '<div class="field"><label>Correo electrónico</label><input type="email" name="email" required placeholder="tucorreo@ejemplo.com"></div>' +
+          '<div class="field"><label>Contraseña</label><input type="password" name="password" required placeholder="••••••••">' +
+            '<div class="field-hint">Prototipo educativo — no uses una contraseña real.</div></div>' +
+          '<button type="submit" class="btn btn-primary btn-block">Crear cuenta de paciente</button>' +
+        '</form>'
+      );
+    }
+    return (
+      '<form data-form="register-psicologo">' +
+        photoField("") +
+        '<div class="field"><label>Nombre completo</label><input type="text" name="nombre" required placeholder="Tu nombre"></div>' +
+        '<div class="field"><label>Correo electrónico</label><input type="email" name="email" required placeholder="tucorreo@ejemplo.com"></div>' +
+        '<div class="field"><label>Contraseña</label><input type="password" name="password" required placeholder="••••••••">' +
+          '<div class="field-hint">Prototipo educativo — no uses una contraseña real.</div></div>' +
+        '<div class="field"><label>Teléfono de contacto</label><input type="tel" name="telefono" placeholder="+34 600 000 000"></div>' +
+        '<div class="field"><label>Especialidades</label>' + tagCheckGrid([]) + '</div>' +
+        '<div class="field"><label>Breve presentación</label><textarea name="bio" placeholder="Cuenta en pocas líneas tu enfoque y experiencia."></textarea></div>' +
+        '<button type="submit" class="btn btn-primary btn-block">Crear perfil profesional</button>' +
+      '</form>'
+    );
+  }
+
+  function photoField(currentUrl) {
+    return (
+      '<div class="field"><label>Foto (opcional)</label>' +
+        '<div class="photo-row">' +
+          avatarHtml("· ·", currentUrl, 52) +
+          '<input type="file" accept="image/*" data-action="photo-input" style="flex:1;">' +
+        '</div>' +
+        '<div class="field-hint">Se queda guardada solo en este navegador.</div>' +
+      '</div>'
+    );
+  }
+
+  function tagCheckGrid(selected) {
+    var html = '<div class="tag-check-grid">';
+    ESPECIALIDADES.forEach(function (esp) {
+      var on = selected.indexOf(esp) !== -1;
+      html += '<label class="tag-check' + (on ? " on" : "") + '"><input type="checkbox" name="especialidad" value="' + escapeHtml(esp) + '"' + (on ? " checked" : "") + '>' + escapeHtml(esp) + '</label>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  // ---- Patient dashboard ----
+  function viewPatientDashboard() {
+    var pacientes = safeGet(KEY_PAC, []);
+    var me = pacientes.filter(function (p) { return p.id === state.session.id; })[0];
+    if (!me) { logout(); return ""; }
+
+    var psi = safeGet(KEY_PSI, []);
+    var filtered = psi.filter(function (p) {
+      var matchEsp = !state.filtroEspecialidad || p.especialidades.indexOf(state.filtroEspecialidad) !== -1;
+      var matchTxt = !state.filtroTexto || p.nombre.toLowerCase().indexOf(state.filtroTexto.toLowerCase()) !== -1;
+      return matchEsp && matchTxt;
+    });
+
+    var solicitudes = safeGet(KEY_SOL, []).filter(function (s) { return s.pacienteId === me.id; });
+
+    var body = "";
+    if (state.patientTab === "buscar") {
+      body += '<div class="search-row"><input type="text" placeholder="Buscar por nombre..." value="' + escapeHtml(state.filtroTexto) + '" data-action="filtro-texto"></div>';
+      body += '<div class="search-row">';
+      body += '<button class="chip-filter' + (!state.filtroEspecialidad ? " on" : "") + '" data-action="filtro-esp" data-esp="">Todas</button>';
+      ESPECIALIDADES.forEach(function (esp) {
+        body += '<button class="chip-filter' + (state.filtroEspecialidad === esp ? " on" : "") + '" data-action="filtro-esp" data-esp="' + escapeHtml(esp) + '">' + escapeHtml(esp) + '</button>';
+      });
+      body += '</div>';
+
+      if (filtered.length === 0) {
+        body += '<div class="empty-state"><h3>No hay psicólogos con este filtro</h3><p>Prueba con otra especialidad o borra la búsqueda.</p></div>';
+      } else {
+        body += '<div class="psi-grid">';
+        filtered.forEach(function (p) {
+          body += (
+            '<div class="psi-card">' +
+              '<div class="head">' + avatarHtml(p.nombre, p.fotoDataUrl, 46) +
+                '<div><h3>' + escapeHtml(p.nombre) + '</h3></div></div>' +
+              '<div class="tag-row">' + p.especialidades.slice(0, 3).map(function (e) { return '<span class="tag">' + escapeHtml(e) + '</span>'; }).join("") + '</div>' +
+              '<p class="bio-snip">' + escapeHtml(p.bio || "").slice(0, 100) + (p.bio && p.bio.length > 100 ? "…" : "") + '</p>' +
+              '<button class="btn btn-sm" data-action="ver-perfil" data-id="' + p.id + '">Ver perfil</button>' +
+            '</div>'
+          );
+        });
+        body += '</div>';
+      }
+    } else {
+      if (solicitudes.length === 0) {
+        body += '<div class="empty-state"><h3>Aún no enviaste ninguna solicitud</h3><p>Busca un psicólogo y cuéntale brevemente tu situación.</p></div>';
+      } else {
+        solicitudes.slice().reverse().forEach(function (s) {
+          var psiRef = psi.filter(function (p) { return p.id === s.psicologoId; })[0];
+          body += (
+            '<div class="req-item">' +
+              '<div class="meta">Para ' + escapeHtml(psiRef ? psiRef.nombre : "psicólogo eliminado") + ' · ' + fmtFecha(s.fecha) + ' · <span class="status-pill ' + (s.estado === "contactado" ? "cont" : "pend") + '">' + (s.estado === "contactado" ? "Contactado" : "Enviada") + '</span></div>' +
+              '<p class="resumen">' + escapeHtml(s.resumen) + '</p>' +
+              '<div class="field-hint">Contacto preferido: ' + (s.contacto === "email" ? "correo" : "teléfono") + '</div>' +
+            '</div>'
+          );
+        });
+      }
+    }
+
+    return (
+      '<div class="wrap">' +
+        appTopbar(me.nombre, "Paciente") +
+        (state.requestBanner ? '<div class="banner ok">' + escapeHtml(state.requestBanner) + '</div>' : '') +
+        '<div class="tabbar">' +
+          '<button class="tabbtn' + (state.patientTab === "buscar" ? " active" : "") + '" data-action="patient-tab" data-tab="buscar">Buscar psicólogo</button>' +
+          '<button class="tabbtn' + (state.patientTab === "solicitudes" ? " active" : "") + '" data-action="patient-tab" data-tab="solicitudes">Mis solicitudes</button>' +
+        '</div>' +
+        body +
+        '<div class="footer-space"></div>' +
+      '</div>' +
+      (state.detailPsiId ? modalPsiDetail(state.detailPsiId) : "")
+    );
+  }
+
+  function modalPsiDetail(id) {
+    var psi = safeGet(KEY_PSI, []);
+    var p = psi.filter(function (x) { return x.id === id; })[0];
+    if (!p) return "";
+    return (
+      '<div class="overlay">' +
+        '<div class="modal" data-stop="1">' +
+          '<div class="modal-head">' +
+            '<div class="detail-avatar-row">' + avatarHtml(p.nombre, p.fotoDataUrl, 58) +
+              '<div><h3 style="font-size:19px;">' + escapeHtml(p.nombre) + '</h3>' +
+              '<div class="contact-line">' + escapeHtml(p.contactoEmail || "") + '</div>' +
+              (p.contactoTelefono ? '<div class="contact-line">' + escapeHtml(p.contactoTelefono) + '</div>' : '') +
+              '</div></div>' +
+            '<button class="btn btn-ghost btn-sm" data-action="close-modal">✕</button>' +
+          '</div>' +
+          '<div class="tag-row" style="margin-bottom:12px;">' + p.especialidades.map(function (e) { return '<span class="tag">' + escapeHtml(e) + '</span>'; }).join("") + '</div>' +
+          '<p style="font-size:14px;color:var(--ink-secondary);margin-bottom:18px;">' + escapeHtml(p.bio || "") + '</p>' +
+          '<form data-form="solicitud" data-psi-id="' + p.id + '">' +
+            '<div class="field"><label>Cuéntale brevemente tu situación</label><textarea name="resumen" required placeholder="Por ejemplo: llevo unas semanas con mucha ansiedad por el trabajo y me gustaría empezar a hablarlo."></textarea></div>' +
+            '<div class="field"><label>Prefiero que me contacten por</label>' +
+              '<div class="tag-check-grid">' +
+                '<label class="tag-check"><input type="radio" name="contacto" value="email" checked> Correo</label>' +
+                '<label class="tag-check"><input type="radio" name="contacto" value="telefono"> Teléfono</label>' +
+              '</div>' +
+            '</div>' +
+            '<button type="submit" class="btn btn-primary btn-block">Enviar solicitud</button>' +
+          '</form>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  // ---- Psychologist dashboard ----
+  function viewPsiDashboard() {
+    var psi = safeGet(KEY_PSI, []);
+    var me = psi.filter(function (p) { return p.id === state.session.id; })[0];
+    if (!me) { logout(); return ""; }
+
+    var solicitudes = safeGet(KEY_SOL, []).filter(function (s) { return s.psicologoId === me.id; });
+
+    var body = "";
+    if (state.psiTab === "perfil") {
+      if (state.editingProfile) {
+        body += (
+          '<div class="card-form">' +
+            '<form data-form="edit-perfil">' +
+              photoField(me.fotoDataUrl) +
+              '<div class="field"><label>Nombre completo</label><input type="text" name="nombre" required value="' + escapeHtml(me.nombre) + '"></div>' +
+              '<div class="field"><label>Correo de contacto</label><input type="email" name="contactoEmail" value="' + escapeHtml(me.contactoEmail || "") + '"></div>' +
+              '<div class="field"><label>Teléfono de contacto</label><input type="tel" name="contactoTelefono" value="' + escapeHtml(me.contactoTelefono || "") + '"></div>' +
+              '<div class="field"><label>Especialidades</label>' + tagCheckGrid(me.especialidades) + '</div>' +
+              '<div class="field"><label>Breve presentación</label><textarea name="bio">' + escapeHtml(me.bio || "") + '</textarea></div>' +
+              '<div style="display:flex;gap:10px;"><button type="submit" class="btn btn-primary">Guardar cambios</button><button type="button" class="btn btn-ghost" data-action="cancel-edit">Cancelar</button></div>' +
+            '</form>' +
+          '</div>'
+        );
+      } else {
+        body += (
+          '<div class="card-form">' +
+            '<div class="detail-avatar-row">' + avatarHtml(me.nombre, me.fotoDataUrl, 58) +
+              '<div><h3 style="font-size:19px;">' + escapeHtml(me.nombre) + '</h3>' +
+              '<div class="contact-line">' + escapeHtml(me.contactoEmail || "") + '</div>' +
+              (me.contactoTelefono ? '<div class="contact-line">' + escapeHtml(me.contactoTelefono) + '</div>' : '') +
+              '</div></div>' +
+            '<div class="tag-row" style="margin-bottom:14px;">' + (me.especialidades.length ? me.especialidades.map(function (e) { return '<span class="tag">' + escapeHtml(e) + '</span>'; }).join("") : '<span class="field-hint">Sin especialidades aún</span>') + '</div>' +
+            '<p style="font-size:14px;color:var(--ink-secondary);margin-bottom:16px;">' + escapeHtml(me.bio || "Todavía no escribiste tu presentación.") + '</p>' +
+            '<button class="btn" data-action="start-edit">Editar mi perfil</button>' +
+          '</div>'
+        );
+      }
+    } else {
+      if (solicitudes.length === 0) {
+        body += '<div class="empty-state"><h3>Aún no recibiste solicitudes</h3><p>Cuando un paciente te escriba, aparecerá aquí.</p></div>';
+      } else {
+        solicitudes.slice().reverse().forEach(function (s) {
+          body += (
+            '<div class="req-item">' +
+              '<div class="meta">' + escapeHtml(s.pacienteNombre) + ' · ' + fmtFecha(s.fecha) + ' · <span class="status-pill ' + (s.estado === "contactado" ? "cont" : "pend") + '">' + (s.estado === "contactado" ? "Contactado" : "Pendiente") + '</span></div>' +
+              '<p class="resumen">' + escapeHtml(s.resumen) + '</p>' +
+              '<div class="field-hint">Prefiere que le contacten por ' + (s.contacto === "email" ? "correo" : "teléfono") + '</div>' +
+              (s.estado !== "contactado" ? '<button class="btn btn-sm" style="margin-top:10px;" data-action="marcar-contactado" data-id="' + s.id + '">Marcar como contactado</button>' : '') +
+            '</div>'
+          );
+        });
+      }
+    }
+
+    return (
+      '<div class="wrap">' +
+        appTopbar(me.nombre, "Psicólogo/a") +
+        '<div class="tabbar">' +
+          '<button class="tabbtn' + (state.psiTab === "perfil" ? " active" : "") + '" data-action="psi-tab" data-tab="perfil">Mi perfil</button>' +
+          '<button class="tabbtn' + (state.psiTab === "solicitudes" ? " active" : "") + '" data-action="psi-tab" data-tab="solicitudes">Solicitudes recibidas' + (solicitudes.filter(function (s) { return s.estado !== "contactado"; }).length ? ' <span class="tag" style="margin-left:4px;">' + solicitudes.filter(function (s) { return s.estado !== "contactado"; }).length + '</span>' : '') + '</button>' +
+        '</div>' +
+        body +
+        '<div class="footer-space"></div>' +
+      '</div>'
+    );
+  }
+
+  function appTopbar(nombre, rolLabel) {
+    return (
+      '<div class="app-top">' +
+        '<button class="brand" data-action="go-landing"><span class="brand-mark">◐</span>Encuéntrame</button>' +
+        '<div class="who"><div>' +
+          '<span>' + escapeHtml(nombre) + '</span><small>' + rolLabel + '</small>' +
+        '</div><button class="btn btn-sm btn-ghost" data-action="logout">Salir</button></div>' +
+      '</div>'
+    );
+  }
+
+  // ---------- Render ----------
+  function render() {
+    var app = document.getElementById("app");
+    if (state.view === "landing") app.innerHTML = viewLanding();
+    else if (state.view === "auth") app.innerHTML = viewAuth();
+    else if (state.view === "patient") app.innerHTML = viewPatientDashboard();
+    else if (state.view === "psi") app.innerHTML = viewPsiDashboard();
+  }
+
+  // ---------- Event delegation ----------
+  document.addEventListener("click", function (e) {
+    if (e.target.classList && e.target.classList.contains("overlay")) {
+      setState({ detailPsiId: null });
+      return;
+    }
+    var tagLabel = e.target.closest(".tag-check");
+    if (tagLabel) {
+      window.setTimeout(function () {
+        var input = tagLabel.querySelector("input");
+        if (input) tagLabel.classList.toggle("on", input.checked);
+      }, 0);
+    }
+    var el = e.target.closest("[data-action]");
+    if (!el) return;
+    var action = el.getAttribute("data-action");
+
+    if (action === "go-landing") { setState({ view: "landing", authError: "", requestBanner: "", detailPsiId: null }); return; }
+    if (action === "go-auth") { setState({ view: "auth", authRole: el.getAttribute("data-role"), authMode: "login", authError: "" }); return; }
+    if (action === "set-auth-mode") { setState({ authMode: el.getAttribute("data-mode"), authError: "" }); return; }
+    if (action === "logout") { logout(); return; }
+    if (action === "patient-tab") { setState({ patientTab: el.getAttribute("data-tab") }); return; }
+    if (action === "psi-tab") { setState({ psiTab: el.getAttribute("data-tab") }); return; }
+    if (action === "filtro-esp") { setState({ filtroEspecialidad: el.getAttribute("data-esp") }); return; }
+    if (action === "ver-perfil") { setState({ detailPsiId: el.getAttribute("data-id") }); return; }
+    if (action === "close-modal") { setState({ detailPsiId: null }); return; }
+    if (action === "start-edit") { setState({ editingProfile: true }); return; }
+    if (action === "cancel-edit") { setState({ editingProfile: false }); return; }
+
+    if (action === "marcar-contactado") {
+      var id = el.getAttribute("data-id");
+      var sols = safeGet(KEY_SOL, []);
+      sols = sols.map(function (s) { return s.id === id ? Object.assign({}, s, { estado: "contactado" }) : s; });
+      safeSet(KEY_SOL, sols);
+      render();
+      return;
+    }
+  });
+
+  document.addEventListener("input", function (e) {
+    if (e.target.matches('[data-action="filtro-texto"]')) {
+      state.filtroTexto = e.target.value;
+      var cursorPos = e.target.selectionStart;
+      var app = document.getElementById("app");
+      var scrollPos = window.scrollY;
+      app.innerHTML = viewPatientDashboard();
+      window.scrollTo(0, scrollPos);
+      var refocused = app.querySelector('[data-action="filtro-texto"]');
+      if (refocused) {
+        refocused.focus();
+        try { refocused.setSelectionRange(cursorPos, cursorPos); } catch (err) {}
+      }
+    }
+    if (e.target.matches('[data-action="photo-input"]')) {
+      var file = e.target.files && e.target.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        e.target.setAttribute("data-loaded", "1");
+        e.target._dataUrl = reader.result;
+        var row = e.target.closest(".photo-row");
+        if (row) {
+          var av = row.querySelector(".avatar");
+          if (av) {
+            av.style.backgroundImage = "url(" + JSON.stringify(reader.result) + ")";
+            av.textContent = "";
+          }
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  document.addEventListener("submit", function (e) {
+    var form = e.target.closest("form[data-form]");
+    if (!form) return;
+    e.preventDefault();
+    var kind = form.getAttribute("data-form");
+    var fd = new FormData(form);
+
+    if (kind === "login") {
+      var email = (fd.get("email") || "").toString().trim().toLowerCase();
+      var pw = (fd.get("password") || "").toString();
+      var role = state.authRole;
+      var list = safeGet(role === "paciente" ? KEY_PAC : KEY_PSI, []);
+      var found = list.filter(function (u) { return u.email.toLowerCase() === email; })[0];
+      if (!found || found.passwordHash !== hashPassword(pw)) {
+        setState({ authError: "Correo o contraseña incorrectos." });
+        return;
+      }
+      safeSet(KEY_SESSION, { tipo: role, id: found.id });
+      setState({ session: { tipo: role, id: found.id }, view: role === "paciente" ? "patient" : "psi", authError: "", requestBanner: "" });
+      return;
+    }
+
+    if (kind === "register-paciente") {
+      var nombre = (fd.get("nombre") || "").toString().trim();
+      var email2 = (fd.get("email") || "").toString().trim().toLowerCase();
+      var pw2 = (fd.get("password") || "").toString();
+      if (!nombre || !email2 || !pw2) { setState({ authError: "Completa todos los campos." }); return; }
+      var pacientes = safeGet(KEY_PAC, []);
+      if (pacientes.some(function (p) { return p.email.toLowerCase() === email2; })) {
+        setState({ authError: "Ya existe una cuenta de paciente con ese correo." });
+        return;
+      }
+      var nuevo = { id: uid(), nombre: nombre, email: email2, passwordHash: hashPassword(pw2) };
+      pacientes.push(nuevo);
+      safeSet(KEY_PAC, pacientes);
+      safeSet(KEY_SESSION, { tipo: "paciente", id: nuevo.id });
+      setState({ session: { tipo: "paciente", id: nuevo.id }, view: "patient", authError: "" });
+      return;
+    }
+
+    if (kind === "register-psicologo") {
+      var nombreP = (fd.get("nombre") || "").toString().trim();
+      var emailP = (fd.get("email") || "").toString().trim().toLowerCase();
+      var pwP = (fd.get("password") || "").toString();
+      if (!nombreP || !emailP || !pwP) { setState({ authError: "Completa nombre, correo y contraseña." }); return; }
+      var psi = safeGet(KEY_PSI, []);
+      if (psi.some(function (p) { return p.email.toLowerCase() === emailP; })) {
+        setState({ authError: "Ya existe un perfil de psicólogo con ese correo." });
+        return;
+      }
+      var especialidades = fd.getAll("especialidad");
+      var fotoInput = form.querySelector('[data-action="photo-input"]');
+      var fotoDataUrl = fotoInput && fotoInput._dataUrl ? fotoInput._dataUrl : "";
+      var nuevoP = {
+        id: uid(), nombre: nombreP, email: emailP, passwordHash: hashPassword(pwP),
+        fotoDataUrl: fotoDataUrl,
+        especialidades: especialidades,
+        bio: (fd.get("bio") || "").toString().trim(),
+        contactoEmail: emailP,
+        contactoTelefono: (fd.get("telefono") || "").toString().trim()
+      };
+      psi.push(nuevoP);
+      safeSet(KEY_PSI, psi);
+      safeSet(KEY_SESSION, { tipo: "psicologo", id: nuevoP.id });
+      setState({ session: { tipo: "psicologo", id: nuevoP.id }, view: "psi", authError: "" });
+      return;
+    }
+
+    if (kind === "edit-perfil") {
+      var psi2 = safeGet(KEY_PSI, []);
+      var meIdx = psi2.findIndex(function (p) { return p.id === state.session.id; });
+      if (meIdx === -1) return;
+      var fotoInput2 = form.querySelector('[data-action="photo-input"]');
+      var fotoNueva = fotoInput2 && fotoInput2._dataUrl ? fotoInput2._dataUrl : psi2[meIdx].fotoDataUrl;
+      psi2[meIdx] = Object.assign({}, psi2[meIdx], {
+        nombre: (fd.get("nombre") || "").toString().trim() || psi2[meIdx].nombre,
+        contactoEmail: (fd.get("contactoEmail") || "").toString().trim(),
+        contactoTelefono: (fd.get("contactoTelefono") || "").toString().trim(),
+        especialidades: fd.getAll("especialidad"),
+        bio: (fd.get("bio") || "").toString().trim(),
+        fotoDataUrl: fotoNueva
+      });
+      safeSet(KEY_PSI, psi2);
+      setState({ editingProfile: false });
+      return;
+    }
+
+    if (kind === "solicitud") {
+      var psiId = form.getAttribute("data-psi-id");
+      var pacientes2 = safeGet(KEY_PAC, []);
+      var me2 = pacientes2.filter(function (p) { return p.id === state.session.id; })[0];
+      if (!me2) return;
+      var resumen = (fd.get("resumen") || "").toString().trim();
+      if (!resumen) return;
+      var solicitudes = safeGet(KEY_SOL, []);
+      solicitudes.push({
+        id: uid(),
+        pacienteId: me2.id,
+        pacienteNombre: me2.nombre,
+        psicologoId: psiId,
+        resumen: resumen,
+        contacto: (fd.get("contacto") || "email").toString(),
+        fecha: new Date().toISOString(),
+        estado: "pendiente"
+      });
+      safeSet(KEY_SOL, solicitudes);
+      var psiRef2 = safeGet(KEY_PSI, []).filter(function (p) { return p.id === psiId; })[0];
+      setState({ detailPsiId: null, patientTab: "solicitudes", requestBanner: "Tu solicitud se envió a " + (psiRef2 ? psiRef2.nombre : "el psicólogo") + ". Te contactará pronto." });
+      return;
+    }
+  });
+
+  // ---------- Init ----------
+  seedIfEmpty();
+  if (state.session) {
+    var validSession = false;
+    if (state.session.tipo === "paciente") {
+      validSession = safeGet(KEY_PAC, []).some(function (p) { return p.id === state.session.id; });
+    } else if (state.session.tipo === "psicologo") {
+      validSession = safeGet(KEY_PSI, []).some(function (p) { return p.id === state.session.id; });
+    }
+    if (validSession) {
+      state.view = state.session.tipo === "paciente" ? "patient" : "psi";
+    } else {
+      state.session = null;
+      localStorage.removeItem(KEY_SESSION);
+    }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
