@@ -105,6 +105,18 @@ def forzar_https():
         return redirect(request.url.replace("http://", "https://", 1), code=301)
 
 
+# Con SQLite (en el servidor) hago una copia de seguridad una vez al día
+@aplicacion.before_request
+def copia_diaria():
+    if RUTA_SQLITE:
+        try:
+            import backup_sqlite
+            if backup_sqlite.toca_copia(RUTA_SQLITE):
+                backup_sqlite.hacer_copia(RUTA_SQLITE)
+        except Exception as error:
+            print("No se pudo hacer la copia de seguridad:", error)    # La web sigue funcionando igual
+
+
 # Y le digo al navegador que use siempre https en esta web
 @aplicacion.after_request
 def cabeceras_seguridad(respuesta):
