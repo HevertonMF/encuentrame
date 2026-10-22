@@ -9,11 +9,12 @@ import uuid                                             # Para dar nombres únic
 
 
 # Datos de conexión a la base de datos
+# En el servidor se leen de variables de entorno; si no existen, uso los de mi PC (XAMPP)
 DATOS_BD = {
-    "host": "localhost",
-    "user": "encuentrame",
-    "password": "Encuentrame123$",
-    "database": "encuentrame"
+    "host": os.environ.get("ENCUENTRAME_BD_HOST", "localhost"),
+    "user": os.environ.get("ENCUENTRAME_BD_USUARIO", "encuentrame"),
+    "password": os.environ.get("ENCUENTRAME_BD_PASSWORD", "Encuentrame123$"),
+    "database": os.environ.get("ENCUENTRAME_BD_NOMBRE", "encuentrame")
 }
 
 
@@ -29,6 +30,13 @@ aplicacion = Flask(__name__, static_folder="logo", static_url_path="/logo")
 # Clave para firmar la cookie de sesión (login)
 # Si existe la variable de entorno ENCUENTRAME_CLAVE la uso; si no, una de desarrollo
 aplicacion.secret_key = os.environ.get("ENCUENTRAME_CLAVE", "clave-solo-para-desarrollo")
+
+# La cookie de sesión no se puede leer desde JavaScript ni enviar desde otras webs
+aplicacion.config["SESSION_COOKIE_HTTPONLY"] = True
+aplicacion.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+# En el servidor (cuando existe ENCUENTRAME_CLAVE) la cookie solo viaja por HTTPS
+aplicacion.config["SESSION_COOKIE_SECURE"] = "ENCUENTRAME_CLAVE" in os.environ
 
 # Las fotos de perfil se guardan en la carpeta "fotos" (máximo 2 MB)
 CARPETA_FOTOS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fotos")

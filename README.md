@@ -71,7 +71,13 @@ Cinco tablas principales más la de administradores:
 - Psicólogo: `marta.ibanez@ejemplo.com` / `demo1234`
 - Administrador: `admin@encuentrame.local` / `admin1234` → http://localhost:5000/entrar?tipo=admin
 
-> Si publicas la aplicación en un servidor, cambia las contraseñas de prueba, la contraseña de la base de datos y define la variable de entorno `ENCUENTRAME_CLAVE`.
+## Publicarlo en un servidor (PythonAnywhere)
+
+- Usa `flask/pythonanywhere.sql` (compatible con MySQL 8). Los psicólogos de ejemplo **no tienen contraseña**, así que nadie puede entrar con sus cuentas.
+- Crea el administrador con `python crear_admin.py`: la contraseña se escribe en la terminal y no se guarda en el código.
+- Define estas variables de entorno (nunca las subas a GitHub):
+  `ENCUENTRAME_CLAVE`, `ENCUENTRAME_BD_HOST`, `ENCUENTRAME_BD_USUARIO`, `ENCUENTRAME_BD_PASSWORD`, `ENCUENTRAME_BD_NOMBRE`.
+- Con `ENCUENTRAME_CLAVE` definida, la cookie de sesión solo viaja por HTTPS.
 
 ## Copias de seguridad
 
