@@ -73,7 +73,10 @@ Cinco tablas principales más la de administradores:
 
 ## Publicarlo en un servidor (PythonAnywhere)
 
-- Usa `flask/pythonanywhere.sql` (compatible con MySQL 8). Los psicólogos de ejemplo **no tienen contraseña**, así que nadie puede entrar con sus cuentas.
+- En la cuenta gratuita no hay MySQL, así que la app usa **SQLite**: crea la base con `python crear_bd_sqlite.py /home/USUARIO/encuentrame.db` y define `ENCUENTRAME_BD_SQLITE` con esa ruta. En local sigue usando MySQL.
+- Con un plan de pago se puede usar MySQL con `flask/pythonanywhere.sql` (compatible con MySQL 8).
+- Los psicólogos de ejemplo **no tienen contraseña**, así que nadie puede entrar con sus cuentas.
+- La base de datos (`*.db`) nunca se sube a GitHub.
 - Crea el administrador con `python crear_admin.py`: la contraseña se escribe en la terminal y no se guarda en el código.
 - Define estas variables de entorno (nunca las subas a GitHub):
   `ENCUENTRAME_CLAVE`, `ENCUENTRAME_BD_HOST`, `ENCUENTRAME_BD_USUARIO`, `ENCUENTRAME_BD_PASSWORD`, `ENCUENTRAME_BD_NOMBRE`.

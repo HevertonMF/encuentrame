@@ -4,3 +4,4 @@ venv/
 .venv/
 backups/
 fotos/
+*.db

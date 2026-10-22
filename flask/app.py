@@ -1,5 +1,10 @@
 # Primero importo las librerías
-import mysql.connector                                  # Importo MySQL
+try:
+    import mysql.connector                              # Importo MySQL (lo uso en mi PC)
+except ImportError:
+    mysql = None                                        # En el servidor uso SQLite y no hace falta
+import sqlite3                                          # SQLite (lo uso en el servidor)
+from datetime import datetime                           # Para leer las fechas de SQLite
 from flask import Flask, request, redirect, session, send_from_directory   # Importo Flask
 from werkzeug.security import generate_password_hash, check_password_hash   # Para las contraseñas
 from html import escape                                 # Para mostrar texto de BD de forma segura
@@ -18,8 +23,57 @@ DATOS_BD = {
 }
 
 
+# Si existe ENCUENTRAME_BD_SQLITE (ruta del archivo .db) uso SQLite en vez de MySQL
+RUTA_SQLITE = os.environ.get("ENCUENTRAME_BD_SQLITE")
+
+# SQLite guarda las fechas como texto: las convierto en datetime al leerlas
+sqlite3.register_converter("TIMESTAMP", lambda valor: datetime.fromisoformat(valor.decode()))
+
+
+# Cursor de SQLite que acepta %s como MySQL (SQLite usa ?)
+class CursorSQLite:
+
+    def __init__(self, cursor):
+        self.cursor = cursor
+
+    def execute(self, sql, parametros=()):
+        return self.cursor.execute(sql.replace("%s", "?"), parametros)
+
+    def fetchone(self):
+        return self.cursor.fetchone()
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+    @property
+    def lastrowid(self):
+        return self.cursor.lastrowid
+
+    def close(self):
+        self.cursor.close()
+
+
+# Conexión de SQLite que se usa igual que la de MySQL
+class ConexionSQLite:
+
+    def __init__(self, ruta):
+        self.conexion = sqlite3.connect(ruta, detect_types=sqlite3.PARSE_DECLTYPES)
+        self.conexion.execute("PRAGMA foreign_keys = ON")     # Para que funcione ON DELETE CASCADE
+
+    def cursor(self):
+        return CursorSQLite(self.conexion.cursor())
+
+    def commit(self):
+        self.conexion.commit()
+
+    def close(self):
+        self.conexion.close()
+
+
 # Abro una conexión nueva en cada petición (así no se cae si MySQL la cierra)
 def conectar():
+    if RUTA_SQLITE:
+        return ConexionSQLite(RUTA_SQLITE)
     return mysql.connector.connect(**DATOS_BD)
 
 
