@@ -686,6 +686,37 @@ ESTILOS = """
         font-weight:bold;
     }
 
+    .invitacion{
+        margin:50px 0;
+        padding:44px 30px;
+        border-radius:22px;
+        background:var(--superficie);
+        text-align:center;
+    }
+
+    .invitacion h2{
+        margin:0 0 10px 0;
+        font-size:30px;
+    }
+
+    .invitacion p{
+        color:var(--tinta-suave);
+        max-width:480px;
+        margin:0 auto 24px auto;
+    }
+
+    .boton-claro{
+        background:var(--fondo);
+        border:1px solid var(--borde);
+        color:var(--tinta);
+        margin-left:8px;
+    }
+
+    .boton-claro:hover{
+        background:var(--fondo);
+        border-color:var(--morado);
+    }
+
     .colegiado{
         font-size:12px;
         color:var(--tinta-gris);
@@ -936,7 +967,7 @@ def cabecera(titulo):
     yo = usuario()
     if yo is None:
         menu = """
-            <a href="/#buscar">Buscar psicólogo</a>
+            <a href="/entrar?tipo=paciente">Buscar psicólogo</a>
             <a href="/panel">Soy psicólogo/a</a>
             <a href="/entrar">Entrar</a>"""
     elif yo["tipo"] == "admin":
@@ -1004,11 +1035,99 @@ def pie():
 
 
 # -------------------------------------------------
+# PORTADA (VISITANTES SIN INICIAR SESIÓN)
+# -------------------------------------------------
+
+def portada():
+
+    aviso = ""
+    if request.args.get("eliminado"):
+        aviso = '<div class="aviso">✓ Tu cuenta se ha eliminado. Gracias por usar Encuéntrame.</div>'
+
+    # Si ya ha entrado (psicólogo o administrador), el botón le lleva a su página
+    yo = usuario()
+    boton_psicologo = "/panel"
+    if yo and yo["tipo"] == "admin":
+        boton_psicologo = "/admin"
+
+    return cabecera("Encuéntrame — psicólogos y pacientes") + """
+
+<div class="contenedor">
+
+    """ + aviso + """
+
+    <section class="hero">
+
+        <div class="mini">Encuéntrame</div>
+
+        <h1>Encuentra quien te escuche</h1>
+
+        <p>
+            Un espacio para conectar con psicólogos según lo que
+            estás viviendo ahora mismo: duelo, ansiedad, pareja y más.
+        </p>
+
+        <a class="boton" href="/entrar?tipo=paciente">Busco apoyo</a>
+        <a class="boton boton-borde" href='""" + boton_psicologo + """'>Soy psicólogo/a</a>
+
+    </section>
+
+
+    <section class="pasos">
+
+        <div class="paso">
+            <div class="numero">1</div>
+            <h3>Crea tu cuenta</h3>
+            <p>Regístrate como paciente en un minuto.</p>
+        </div>
+
+        <div class="paso">
+            <div class="numero">2</div>
+            <h3>Explora y filtra</h3>
+            <p>Busca por nombre o elige una especialidad.</p>
+        </div>
+
+        <div class="paso">
+            <div class="numero">3</div>
+            <h3>Cuéntanos</h3>
+            <p>Explica brevemente tu situación.</p>
+        </div>
+
+        <div class="paso">
+            <div class="numero">4</div>
+            <h3>Te contactan</h3>
+            <p>Por correo o teléfono, como prefieras.</p>
+        </div>
+
+    </section>
+
+
+    <section class="invitacion">
+
+        <h2>Nuestros psicólogos te esperan</h2>
+
+        <p>Para ver los perfiles de los profesionales y pedir tu primera sesión, entra con tu cuenta de paciente.</p>
+
+        <a class="boton" href="/registro?tipo=paciente">Crear cuenta</a>
+        <a class="boton boton-claro" href="/entrar?tipo=paciente">Ya tengo cuenta</a>
+
+    </section>
+
+</div>
+""" + pie()
+
+
+# -------------------------------------------------
 # PÁGINA PRINCIPAL
 # -------------------------------------------------
 
 @aplicacion.route("/")
 def inicio():
+
+    # Solo los pacientes que han iniciado sesión ven la lista de psicólogos
+    yo = usuario()
+    if yo is None or yo["tipo"] != "paciente":
+        return portada()
 
     # Pido los psicólogos a la base de datos
     conexion = conectar()
@@ -1038,7 +1157,6 @@ def inicio():
     # Si un paciente ha iniciado sesión, relleno su nombre y correo en el formulario
     nombre_paciente = ""
     email_paciente = ""
-    yo = usuario()
     if yo and yo["tipo"] == "paciente":
         conexion = conectar()
         cursor = conexion.cursor()
@@ -1341,6 +1459,11 @@ def inicio():
 @aplicacion.route("/solicitud", methods=["POST"])
 def solicitud():
 
+    # Solo los pacientes que han iniciado sesión pueden enviar solicitudes
+    yo = usuario()
+    if yo is None or yo["tipo"] != "paciente":
+        return redirect("/entrar?tipo=paciente")
+
     # Recojo los datos del formulario
     psicologo_id = request.form.get("psicologo_id")
     nombre = request.form.get("nombre", "").strip()
@@ -1368,9 +1491,8 @@ def solicitud():
         conexion.close()
         return redirect("/#buscar")
 
-    # Si el paciente ha iniciado sesión, enlazo la solicitud con su cuenta
-    yo = usuario()
-    paciente_id = yo["id"] if yo and yo["tipo"] == "paciente" else None
+    # Enlazo la solicitud con la cuenta del paciente
+    paciente_id = yo["id"]
 
     # Guardo la solicitud (con %s para evitar inyección SQL)
     cursor.execute(

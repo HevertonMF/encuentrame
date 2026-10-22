@@ -8,7 +8,7 @@ Aplicación web para ayudar a las personas a encontrar al psicólogo que mejor s
 
 **Cómo probarla:**
 
-1. **Como paciente:** pulsa *Entrar → Crear cuenta*, busca un psicólogo por especialidad y envíale una solicitud. En *Mis solicitudes* verás su estado.
+1. **Como paciente:** pulsa *Busco apoyo → Crear cuenta*. Al entrar verás a los psicólogos: búscalos por especialidad y envía una solicitud. En *Mis solicitudes* verás su estado.
 2. **Como psicólogo/a:** crea una cuenta en la pestaña *Soy psicólogo/a* con un número de colegiado inventado (por ejemplo `TEST-1234`). Tu perfil quedará **pendiente de aprobación** hasta que lo revise el administrador.
 
 > ⚠️ Es un proyecto de estudio: los psicólogos son ficticios. **No uses tu contraseña habitual ni escribas datos personales reales.** Puedes eliminar tu cuenta cuando quieras desde la propia web.
