@@ -1,6 +1,6 @@
-# Crea la base de datos SQLite de Encuéntrame (para el servidor)
-# - Crea las tablas y mete los datos de ejemplo de pythonanywhere.sql
-# - Si el archivo ya existe NO hace nada (así nunca se borran datos)
+# Crea o actualiza la base de datos SQLite de Encuéntrame (para el servidor)
+# - Si NO existe: crea todas las tablas y mete los datos de ejemplo de pythonanywhere.sql
+# - Si YA existe: solo añade las tablas nuevas que falten (nunca borra datos)
 # Uso: python crear_bd_sqlite.py encuentrame.db
 
 import os
@@ -8,10 +8,6 @@ import sqlite3
 import sys
 
 ruta = sys.argv[1] if len(sys.argv) > 1 else "encuentrame.db"
-
-if os.path.exists(ruta):
-    print("La base de datos", ruta, "ya existe. No hago nada.")
-    raise SystemExit
 
 # Tablas (igual que en MySQL, adaptadas a SQLite)
 TABLAS = """
@@ -74,6 +70,60 @@ CREATE TABLE administradores (
 );
 """
 
+# Tablas nuevas (contacto, recuperar contraseña, valoraciones y agenda)
+# Llevan IF NOT EXISTS para poder añadirlas a una base que ya existe
+TABLAS_NUEVAS = """
+CREATE TABLE IF NOT EXISTS contactos (
+    id       INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre   TEXT NOT NULL,
+    email    TEXT NOT NULL,
+    mensaje  TEXT NOT NULL,
+    leido    INTEGER NOT NULL DEFAULT 0,
+    fecha    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS recuperaciones (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    tipo        TEXT NOT NULL,
+    usuario_id  INTEGER NOT NULL,
+    token_hash  TEXT NOT NULL UNIQUE,
+    expira      TIMESTAMP NOT NULL,
+    usado       INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS valoraciones (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    solicitud_id  INTEGER NOT NULL UNIQUE,
+    psicologo_id  INTEGER NOT NULL,
+    paciente_id   INTEGER,
+    estrellas     INTEGER NOT NULL CHECK (estrellas BETWEEN 1 AND 5),
+    comentario    TEXT,
+    fecha         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE CASCADE,
+    FOREIGN KEY (psicologo_id) REFERENCES psicologos(id)  ON DELETE CASCADE,
+    FOREIGN KEY (paciente_id)  REFERENCES pacientes(id)   ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS horarios (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    psicologo_id  INTEGER NOT NULL,
+    fecha_hora    TIMESTAMP NOT NULL,
+    solicitud_id  INTEGER UNIQUE,
+    UNIQUE (psicologo_id, fecha_hora),
+    FOREIGN KEY (psicologo_id) REFERENCES psicologos(id)  ON DELETE CASCADE,
+    FOREIGN KEY (solicitud_id) REFERENCES solicitudes(id) ON DELETE SET NULL
+);
+"""
+
+# Si la base ya existe, solo añado las tablas nuevas
+if os.path.exists(ruta):
+    conexion = sqlite3.connect(ruta)
+    conexion.executescript(TABLAS_NUEVAS)
+    conexion.commit()
+    conexion.close()
+    print("La base de datos", ruta, "ya existía: he añadido las tablas nuevas que faltaban.")
+    raise SystemExit
+
 # Los datos de ejemplo son los mismos que en pythonanywhere.sql (desde el primer INSERT)
 carpeta = os.path.dirname(os.path.abspath(__file__))
 with open(os.path.join(carpeta, "pythonanywhere.sql"), encoding="utf-8") as archivo:
@@ -81,7 +131,7 @@ with open(os.path.join(carpeta, "pythonanywhere.sql"), encoding="utf-8") as arch
 datos = texto[texto.index("INSERT INTO"):]
 
 conexion = sqlite3.connect(ruta)
-conexion.executescript(TABLAS + datos)
+conexion.executescript(TABLAS + TABLAS_NUEVAS + datos)
 conexion.commit()
 
 cursor = conexion.cursor()

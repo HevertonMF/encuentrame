@@ -29,18 +29,27 @@ Aplicación web para ayudar a las personas a encontrar al psicólogo que mejor s
 - Búsqueda de psicólogos por nombre o tema y filtros por especialidad.
 - Envío de solicitudes de primera sesión (contacto por correo o teléfono).
 - Página «Mis solicitudes» para ver si el psicólogo ya ha contactado.
+- Puede elegir una **hora libre** de la agenda del psicólogo al pedir la primera sesión.
+- Después de ser contactado, puede **valorar** al psicólogo (1 a 5 estrellas y un comentario).
+- **¿Has olvidado tu contraseña?**: enlace por correo que caduca en 1 hora y solo sirve una vez.
 - Opción de eliminar la cuenta.
 
 **Psicólogos**
 - Registro con número de colegiado (no se puede repetir).
 - Panel con las solicitudes recibidas, que se marcan como «contactado».
 - Edición del perfil: foto, especialidades, teléfono, presentación y nº de colegiado.
+- **Agenda**: añade sus horas libres y ve cuáles han reservado los pacientes.
+- Ve su nota media y las opiniones de sus pacientes.
 - Los perfiles nuevos quedan **pendientes de aprobación** hasta que los revisa un administrador.
 
 **Administración** (`/admin`)
 - Resumen con psicólogos publicados, pendientes, pacientes y solicitudes.
 - Aprobar, ocultar o eliminar psicólogos.
 - Eliminar pacientes y ver las últimas solicitudes.
+- Leer y gestionar los **mensajes de contacto** y moderar las **valoraciones**.
+
+**Contacto** (`/contacto`)
+- Formulario abierto a todos, con límite de 5 mensajes por hora contra el spam.
 
 **Seguridad**
 - Ninguna contraseña ni clave está en el código: se leen de `config_local.py` (que no se sube) o de variables de entorno.
@@ -51,11 +60,13 @@ Aplicación web para ayudar a las personas a encontrar al psicólogo que mejor s
 - Protección **CSRF**: todos los formularios llevan un código secreto de la sesión.
 - Cookies de sesión `HttpOnly`, `SameSite=Lax` y, en el servidor, solo por HTTPS (con redirección automática).
 - Cada usuario solo puede ver y cambiar sus propios datos.
+- Enlaces de recuperación guardados como hash, de un solo uso y con caducidad; la respuesta no revela si un correo está registrado.
+- Cabeceras `X-Frame-Options`, `X-Content-Type-Options` y `Referrer-Policy`.
 
 ## Base de datos
 
 - `psicologos`, `pacientes`, `especialidades`, `psicologo_especialidad` (relación N:M), `solicitudes`
-- `administradores`
+- `administradores`, `contactos`, `recuperaciones`, `valoraciones`, `horarios`
 
 ## Cómo ejecutarlo en local (MySQL / XAMPP)
 
@@ -68,6 +79,7 @@ Aplicación web para ayudar a las personas a encontrar al psicólogo que mejor s
    mysql -u root < flask/migracion_01.sql
    mysql -u root < flask/migracion_02.sql
    mysql -u root < flask/migracion_03.sql
+   mysql -u root < flask/migracion_04.sql
    ```
 
 4. Instala las librerías, crea tu administrador y arranca la aplicación:

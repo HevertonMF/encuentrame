@@ -14,6 +14,11 @@ import uuid                                             # Para dar nombres únic
 import secrets                                          # Para el código anti-CSRF
 import hmac                                             # Para comparar el código de forma segura
 import re                                               # Para meter el código en los formularios
+import hashlib                                          # Para guardar el hash de los enlaces de recuperación
+import json                                             # Para pasar los horarios libres al JavaScript
+import smtplib                                          # Para enviar correos
+from email.message import EmailMessage                  # Para escribir los correos
+from datetime import timedelta                          # Para sumar tiempo a una fecha
 
 
 # Datos de conexión a MySQL
@@ -35,6 +40,7 @@ RUTA_SQLITE = os.environ.get("ENCUENTRAME_BD_SQLITE")
 
 # SQLite guarda las fechas como texto: las convierto en datetime al leerlas
 sqlite3.register_converter("TIMESTAMP", lambda valor: datetime.fromisoformat(valor.decode()))
+sqlite3.register_adapter(datetime, lambda fecha: fecha.isoformat(" "))
 
 
 # Cursor de SQLite que acepta %s como MySQL (SQLite usa ?)
@@ -56,6 +62,10 @@ class CursorSQLite:
     def lastrowid(self):
         return self.cursor.lastrowid
 
+    @property
+    def rowcount(self):
+        return self.cursor.rowcount
+
     def close(self):
         self.cursor.close()
 
@@ -73,6 +83,9 @@ class ConexionSQLite:
     def commit(self):
         self.conexion.commit()
 
+    def rollback(self):
+        self.conexion.rollback()
+
     def close(self):
         self.conexion.close()
 
@@ -82,6 +95,61 @@ def conectar():
     if RUTA_SQLITE:
         return ConexionSQLite(RUTA_SQLITE)
     return mysql.connector.connect(**DATOS_BD)
+
+
+# Hora actual en España (el servidor está en otra zona horaria)
+def ahora():
+    try:
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo("Europe/Madrid")).replace(tzinfo=None, microsecond=0)
+    except Exception:
+        return datetime.now().replace(microsecond=0)
+
+
+DIAS = ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"]
+
+# "lun 27/10/2026 · 10:00"
+def fecha_bonita(fecha):
+    return DIAS[fecha.weekday()] + " " + fecha.strftime("%d/%m/%Y · %H:%M")
+
+
+# "★★★★☆"
+def estrellas_texto(numero):
+    numero = int(round(numero))
+    return "★" * numero + "☆" * (5 - numero)
+
+
+# Datos para enviar correos (Gmail). En el servidor vienen de variables de entorno
+# y en mi PC pueden estar en config_local.py. Si no hay, no se envía nada.
+try:
+    from config_local import CORREO
+except ImportError:
+    CORREO = {
+        "usuario": os.environ.get("ENCUENTRAME_CORREO_USUARIO", ""),
+        "password": os.environ.get("ENCUENTRAME_CORREO_PASSWORD", "")
+    }
+
+# Dirección pública de la web (para los enlaces de los correos)
+URL_PUBLICA = os.environ.get("ENCUENTRAME_URL", "https://encuentrame.pythonanywhere.com")
+
+
+# Envío un correo. Devuelvo True si se ha enviado.
+def enviar_correo(destino, asunto, texto):
+    if not CORREO.get("usuario") or not CORREO.get("password"):
+        return False
+    mensaje = EmailMessage()
+    mensaje["From"] = "Encuéntrame <" + CORREO["usuario"] + ">"
+    mensaje["To"] = destino
+    mensaje["Subject"] = asunto
+    mensaje.set_content(texto)
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=20) as servidor:
+            servidor.login(CORREO["usuario"], CORREO["password"])
+            servidor.send_message(mensaje)
+        return True
+    except Exception as error:
+        print("No se pudo enviar el correo:", type(error).__name__)
+        return False
 
 
 # Ahora creo una aplicación base
@@ -125,6 +193,9 @@ def copia_diaria():
 def cabeceras_seguridad(respuesta):
     if EN_SERVIDOR:
         respuesta.headers["Strict-Transport-Security"] = "max-age=31536000"
+    respuesta.headers["Referrer-Policy"] = "same-origin"          # Los enlaces de recuperación no salen a otras webs
+    respuesta.headers["X-Frame-Options"] = "DENY"                 # Nadie puede meter mi web dentro de la suya
+    respuesta.headers["X-Content-Type-Options"] = "nosniff"
     return respuesta
 
 
@@ -773,6 +844,123 @@ ESTILOS = """
         border-color:var(--morado);
     }
 
+    /* Valoraciones */
+    .nota{
+        font-size:13px;
+        color:var(--tinta-suave);
+    }
+
+    .nota .estrellas, .estrellas{
+        color:#E0A100;
+        letter-spacing:1px;
+    }
+
+    .opiniones summary{
+        cursor:pointer;
+        font-size:13px;
+        color:var(--morado-fuerte);
+        font-weight:bold;
+    }
+
+    .opinion{
+        font-size:13px;
+        color:var(--tinta-suave);
+        border-left:3px solid var(--superficie);
+        padding:4px 10px;
+        margin:8px 0;
+    }
+
+    .valorar{
+        margin-top:12px;
+        padding:14px;
+        border-radius:12px;
+        background:var(--superficie);
+    }
+
+    .valorar .elegir-estrellas{
+        display:flex;
+        flex-direction:row-reverse;
+        justify-content:flex-end;
+        gap:2px;
+        margin-bottom:8px;
+    }
+
+    .valorar .elegir-estrellas input{
+        display:none;
+    }
+
+    .valorar .elegir-estrellas label{
+        font-size:26px;
+        color:#C9C2D6;
+        cursor:pointer;
+    }
+
+    .valorar .elegir-estrellas input:checked ~ label,
+    .valorar .elegir-estrellas label:hover,
+    .valorar .elegir-estrellas label:hover ~ label{
+        color:#E0A100;
+    }
+
+    .valorar textarea{
+        width:100%;
+        min-height:60px;
+        padding:8px 10px;
+        border:1px solid var(--borde);
+        border-radius:9px;
+        font-family:inherit;
+        background:var(--fondo);
+        color:var(--tinta);
+    }
+
+    /* Agenda */
+    .cita{
+        display:inline-block;
+        margin-top:6px;
+        padding:4px 10px;
+        border-radius:999px;
+        background:var(--ok-fondo);
+        color:var(--ok);
+        font-size:13px;
+        font-weight:bold;
+    }
+
+    .fila-horario{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+        padding:10px 14px;
+        border:1px solid var(--borde);
+        border-radius:12px;
+        margin-bottom:8px;
+    }
+
+    .form-linea{
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+        align-items:end;
+    }
+
+    .form-linea .campo{
+        margin:0;
+    }
+
+    .campo select{
+        width:100%;
+        padding:10px 12px;
+        border:1px solid var(--borde);
+        border-radius:9px;
+        background:var(--fondo);
+        color:var(--tinta);
+        font-family:inherit;
+        font-size:15px;
+    }
+
+    .no-leido td{
+        font-weight:bold;
+    }
+
     .colegiado{
         font-size:12px;
         color:var(--tinta-gris);
@@ -794,7 +982,7 @@ ESTILOS = """
 
     .cifras{
         display:grid;
-        grid-template-columns:repeat(4,1fr);
+        grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
         gap:14px;
         margin-bottom:34px;
     }
@@ -1025,6 +1213,7 @@ def cabecera(titulo):
         menu = """
             <a href="/entrar?tipo=paciente">Buscar psicólogo</a>
             <a href="/panel">Soy psicólogo/a</a>
+            <a href="/contacto">Contacto</a>
             <a href="/entrar">Entrar</a>"""
     elif yo["tipo"] == "admin":
         menu = """
@@ -1034,12 +1223,14 @@ def cabecera(titulo):
     elif yo["tipo"] == "psicologo":
         menu = """
             <a href="/panel">Mi panel</a>
+            <a href="/agenda">Mi agenda</a>
             <a href="/perfil">Mi perfil</a>
             <a href="/salir">Salir</a>"""
     else:
         menu = """
             <a href="/#buscar">Buscar psicólogo</a>
             <a href="/mis-solicitudes">Mis solicitudes</a>
+            <a href="/contacto">Contacto</a>
             <a href="/salir">Salir (""" + escape(yo["nombre"].split()[0]) + """)</a>"""
 
     return """
@@ -1082,7 +1273,8 @@ def pie():
     return """
 
 <footer>
-    © 2026 Encuéntrame · Proyecto de estudio DAM · Los perfiles son ficticios
+    © 2026 Encuéntrame · Proyecto de estudio DAM · Los perfiles son ficticios ·
+    <a href="/contacto" style="color:inherit">Contacto</a>
 </footer>
 
 </body>
@@ -1191,6 +1383,37 @@ def inicio():
     # Solo muestro los psicólogos que ha aprobado un administrador
     cursor.execute("SELECT id, nombre, especialidades, bio, foto, numero_colegiado FROM psicologos WHERE aprobado = 1 ORDER BY nombre")
     filas = cursor.fetchall()
+
+    # Nota media y número de valoraciones de cada psicólogo
+    cursor.execute("SELECT psicologo_id, AVG(estrellas), COUNT(*) FROM valoraciones GROUP BY psicologo_id")
+    notas = {fila[0]: (float(fila[1]), fila[2]) for fila in cursor.fetchall()}
+
+    # Las 3 opiniones más recientes con comentario (sin el nombre del paciente)
+    cursor.execute("""
+        SELECT psicologo_id, estrellas, comentario
+        FROM valoraciones
+        WHERE comentario IS NOT NULL AND comentario <> ''
+        ORDER BY fecha DESC
+    """)
+    opiniones = {}
+    for fila in cursor.fetchall():
+        opiniones.setdefault(fila[0], [])
+        if len(opiniones[fila[0]]) < 3:
+            opiniones[fila[0]].append(fila)
+
+    # Horas libres de cada psicólogo (solo futuras, máximo 20)
+    cursor.execute("""
+        SELECT id, psicologo_id, fecha_hora
+        FROM horarios
+        WHERE solicitud_id IS NULL AND fecha_hora > %s
+        ORDER BY fecha_hora
+    """, (ahora(),))
+    horarios_libres = {}
+    for fila in cursor.fetchall():
+        horarios_libres.setdefault(fila[1], [])
+        if len(horarios_libres[fila[1]]) < 20:
+            horarios_libres[fila[1]].append([fila[0], fecha_bonita(fila[2])])
+
     cursor.close()
     conexion.close()
 
@@ -1207,8 +1430,8 @@ def inicio():
     aviso = ""
     if request.args.get("enviado"):
         aviso = '<div class="aviso">✓ Tu solicitud se envió a ' + escape(request.args.get("enviado")) + '. Te contactará pronto.</div>'
-    if request.args.get("eliminado"):
-        aviso = '<div class="aviso">✓ Tu cuenta se ha eliminado. Gracias por usar Encuéntrame.</div>'
+    if request.args.get("horario_ocupado"):
+        aviso = '<div class="error" style="margin-top:20px">Esa hora acaba de reservarla otra persona. Elige otra, por favor.</div>'
 
     # Si un paciente ha iniciado sesión, relleno su nombre y correo en el formulario
     nombre_paciente = ""
@@ -1323,6 +1546,28 @@ def inicio():
         for esp in especialidades:
             etiquetas += '<span class="etiqueta">' + escape(esp) + '</span>'
 
+        # Nota media y opiniones
+        if id_psicologo in notas:
+            media, cuantas = notas[id_psicologo]
+            texto_nota = ('<span class="estrellas">' + estrellas_texto(media) + '</span> '
+                          + f"{media:.1f}".replace(".", ",") + " · " + str(cuantas)
+                          + (" opinión" if cuantas == 1 else " opiniones"))
+        else:
+            texto_nota = "Sin opiniones todavía"
+
+        bloque_opiniones = ""
+        if opiniones.get(id_psicologo):
+            bloque_opiniones = '<details class="opiniones"><summary>Ver opiniones</summary>'
+            for op in opiniones[id_psicologo]:
+                bloque_opiniones += ('<div class="opinion"><span class="estrellas">' + estrellas_texto(op[1])
+                                     + '</span><br>' + escape(op[2]) + '</div>')
+            bloque_opiniones += '</details>'
+
+        # Horas libres para el formulario (en JSON, escapado para el atributo HTML)
+        libres = escape(json.dumps(horarios_libres.get(id_psicologo, [])))
+        texto_libres = ("📅 " + str(len(horarios_libres[id_psicologo])) + " horas libres"
+                        if horarios_libres.get(id_psicologo) else "")
+
         cadena += f"""
 
             <article
@@ -1347,14 +1592,21 @@ def inicio():
                     {etiquetas}
                 </div>
 
+                <div class="nota">{texto_nota}</div>
+
                 <p class="bio">
                     {bio}
                 </p>
+
+                {bloque_opiniones}
+
+                <div class="nota">{texto_libres}</div>
 
                 <button
                     class="boton boton-pequeno"
                     data-id="{id_psicologo}"
                     data-nombre-mostrar="{nombre}"
+                    data-horarios="{libres}"
                     onclick="abrirSolicitud(this)"
                 >
                     Solicitar primera sesión
@@ -1408,6 +1660,11 @@ def inicio():
             <label>Cuéntale brevemente tu situación</label>
             <textarea name="resumen" required
                 placeholder="Por ejemplo: llevo unas semanas con mucha ansiedad por el trabajo..."></textarea>
+        </div>
+
+        <div class="campo">
+            <label>Elige una hora (opcional)</label>
+            <select name="horario_id" id="horario"></select>
         </div>
 
         <div class="campo opciones">
@@ -1496,6 +1753,22 @@ def inicio():
         document.querySelector("#psicologo-id").value = boton.dataset.id;
         document.querySelector("#nombre-psicologo").textContent = boton.dataset.nombreMostrar;
 
+        // Relleno el desplegable con las horas libres de este psicólogo
+        let selector = document.querySelector("#horario");
+        selector.innerHTML = "";
+
+        let ninguna = document.createElement("option");
+        ninguna.value = "";
+        ninguna.textContent = "Sin hora concreta (que me propongan una)";
+        selector.appendChild(ninguna);
+
+        JSON.parse(boton.dataset.horarios || "[]").forEach(function(hora){
+            let opcion = document.createElement("option");
+            opcion.value = hora[0];
+            opcion.textContent = hora[1];
+            selector.appendChild(opcion);
+        });
+
         ventana.showModal();
 
     }
@@ -1556,6 +1829,23 @@ def solicitud():
         "VALUES (%s, %s, %s, %s, %s, %s, %s)",
         (psicologo_id, paciente_id, nombre, email, telefono, resumen, contacto)
     )
+    id_solicitud = cursor.lastrowid
+
+    # Si ha elegido una hora, la reservo (solo si sigue libre, es de este psicólogo y es futura)
+    horario_id = request.form.get("horario_id", "")
+    if horario_id:
+        cursor.execute(
+            "UPDATE horarios SET solicitud_id = %s "
+            "WHERE id = %s AND psicologo_id = %s AND solicitud_id IS NULL AND fecha_hora > %s",
+            (id_solicitud, horario_id, psicologo_id, ahora())
+        )
+        if cursor.rowcount != 1:
+            # Otra persona la ha reservado antes: no guardo nada
+            conexion.rollback()
+            cursor.close()
+            conexion.close()
+            return redirect("/?horario_ocupado=1#buscar")
+
     conexion.commit()
 
     cursor.close()
@@ -1585,15 +1875,28 @@ def panel():
 
     # Solicitudes de este psicólogo
     cursor.execute("""
-        SELECT id, nombre_paciente, email_paciente, telefono, resumen, contacto, estado, fecha
-        FROM solicitudes
-        WHERE psicologo_id = %s
-        ORDER BY fecha DESC
+        SELECT s.id, s.nombre_paciente, s.email_paciente, s.telefono, s.resumen, s.contacto, s.estado, s.fecha,
+               h.fecha_hora, v.estrellas, v.comentario
+        FROM solicitudes s
+        LEFT JOIN horarios h ON h.solicitud_id = s.id
+        LEFT JOIN valoraciones v ON v.solicitud_id = s.id
+        WHERE s.psicologo_id = %s
+        ORDER BY s.fecha DESC
     """, (yo["id"],))
     solicitudes = cursor.fetchall()
 
+    # Mi nota media
+    cursor.execute("SELECT AVG(estrellas), COUNT(*) FROM valoraciones WHERE psicologo_id = %s", (yo["id"],))
+    mi_nota = cursor.fetchone()
+
     cursor.close()
     conexion.close()
+
+    resumen_nota = ""
+    if mi_nota and mi_nota[1]:
+        resumen_nota = ('<p class="nota">Tu valoración media: <span class="estrellas">' + estrellas_texto(float(mi_nota[0]))
+                        + '</span> ' + f"{float(mi_nota[0]):.1f}".replace(".", ",") + " (" + str(mi_nota[1])
+                        + (" opinión" if mi_nota[1] == 1 else " opiniones") + ')</p>')
 
 
     cadena = cabecera("Panel del psicólogo — Encuéntrame") + """
@@ -1603,7 +1906,8 @@ def panel():
     <div class="titulo-seccion">
         <div>
             <h2>Hola, """ + escape(yo["nombre"]) + """</h2>
-            <p>Estas son las solicitudes que te han enviado.</p>
+            <p>Estas son las solicitudes que te han enviado. <a href="/agenda">Gestiona tus horas libres en tu agenda</a>.</p>
+            """ + resumen_nota + """
         </div>
     </div>
 """ + ("" if aprobado else """
@@ -1650,6 +1954,10 @@ def panel():
                 {'· ☎ ' + escape(s[3]) if s[3] else ''}
                 · Prefiere {'correo' if s[5] == 'email' else 'teléfono'}
             </div>
+
+            {'<span class="cita">📅 Cita: ' + fecha_bonita(s[8]) + '</span>' if s[8] else ''}
+
+            {'<div class="opinion"><span class="estrellas">' + estrellas_texto(s[9]) + '</span> ' + escape(s[10] or '') + '</div>' if s[9] else ''}
 
             {boton}
 
@@ -1726,6 +2034,8 @@ def pagina_acceso(modo, tipo, error=""):
 
     if error:
         cadena += '        <div class="error">' + escape(error) + '</div>\n'
+    elif request.args.get("restablecida"):
+        cadena += '        <div class="aviso" style="margin:0 0 16px 0">✓ Contraseña cambiada. Ya puedes entrar.</div>\n'
 
     cadena += """
         <form method="post" action="/""" + modo + """">
@@ -1806,6 +2116,7 @@ def pagina_acceso(modo, tipo, error=""):
     elif es_registro:
         cadena += '        <p class="cambiar">¿Ya tienes cuenta? <a href="/entrar?tipo=' + tipo + '">Entrar</a></p>\n'
     else:
+        cadena += '        <p class="cambiar"><a href="/olvide?tipo=' + tipo + '">¿Has olvidado tu contraseña?</a></p>\n'
         cadena += '        <p class="cambiar">¿No tienes cuenta? <a href="/registro?tipo=' + tipo + '">Crear cuenta</a></p>\n'
 
     cadena += """
@@ -1858,13 +2169,13 @@ def claves_intento(tipo, email):
 
 
 # Borro los fallos antiguos y digo si alguna clave está bloqueada
-def esta_bloqueado(claves):
-    ahora = datetime.now().timestamp()
+def esta_bloqueado(claves, maximo=MAX_INTENTOS, minutos=MINUTOS_BLOQUEO):
+    momento = datetime.now().timestamp()
     bloqueado = False
     for clave in claves:
-        recientes = [t for t in intentos_fallidos.get(clave, []) if ahora - t < MINUTOS_BLOQUEO * 60]
+        recientes = [t for t in intentos_fallidos.get(clave, []) if momento - t < minutos * 60]
         intentos_fallidos[clave] = recientes
-        if len(recientes) >= MAX_INTENTOS:
+        if len(recientes) >= maximo:
             bloqueado = True
     return bloqueado
 
@@ -2016,9 +2327,12 @@ def mis_solicitudes():
     conexion = conectar()
     cursor = conexion.cursor()
     cursor.execute("""
-        SELECT s.resumen, s.contacto, s.estado, s.fecha, p.nombre, p.foto
+        SELECT s.resumen, s.contacto, s.estado, s.fecha, p.nombre, p.foto,
+               s.id, h.fecha_hora, v.estrellas, v.comentario
         FROM solicitudes s
         JOIN psicologos p ON p.id = s.psicologo_id
+        LEFT JOIN horarios h ON h.solicitud_id = s.id
+        LEFT JOIN valoraciones v ON v.solicitud_id = s.id
         WHERE s.paciente_id = %s
         ORDER BY s.fecha DESC
     """, (yo["id"],))
@@ -2038,6 +2352,9 @@ def mis_solicitudes():
     </div>
 """
 
+    if request.args.get("valorado"):
+        cadena += '    <div class="aviso" style="margin:0 0 16px 0">✓ Gracias por tu valoración.</div>\n'
+
     if not solicitudes:
         cadena += """
     <p class="vacio" style="display:block">
@@ -2049,6 +2366,24 @@ def mis_solicitudes():
     for s in solicitudes:
 
         contactado = s[2] == "contactado"
+
+        # Si ya le han contactado, puede valorar (una sola vez)
+        bloque_valoracion = ""
+        if s[8]:
+            bloque_valoracion = ('<div class="opinion">Tu valoración: <span class="estrellas">' + estrellas_texto(s[8])
+                                 + '</span> ' + escape(s[9] or "") + '</div>')
+        elif contactado:
+            radios = ""
+            for n in range(5, 0, -1):
+                radios += (f'<input type="radio" name="estrellas" value="{n}" id="e{s[6]}_{n}" required>'
+                           f'<label for="e{s[6]}_{n}" title="{n} estrellas">★</label>')
+            bloque_valoracion = f"""
+        <form method="post" action="/valorar/{s[6]}" class="valorar">
+            <strong>¿Qué tal te ha ido?</strong>
+            <div class="elegir-estrellas">{radios}</div>
+            <textarea name="comentario" maxlength="1000" placeholder="Cuéntanos tu experiencia (opcional). No escribas datos personales."></textarea>
+            <button class="boton boton-pequeno" style="margin-top:8px">Enviar valoración</button>
+        </form>"""
 
         cadena += f"""
 
@@ -2067,6 +2402,10 @@ def mis_solicitudes():
         <p>{escape(s[0])}</p>
 
         <div class="meta">Prefieres que te contacten por {'correo' if s[1] == 'email' else 'teléfono'}</div>
+
+        {'<span class="cita">📅 Cita: ' + fecha_bonita(s[7]) + '</span>' if s[7] else ''}
+
+        {bloque_valoracion}
 
     </div>
 """
@@ -2405,9 +2744,24 @@ def admin():
             (SELECT COUNT(*) FROM psicologos WHERE aprobado = 1),
             (SELECT COUNT(*) FROM psicologos WHERE aprobado = 0),
             (SELECT COUNT(*) FROM pacientes),
-            (SELECT COUNT(*) FROM solicitudes WHERE estado = 'pendiente')
+            (SELECT COUNT(*) FROM solicitudes WHERE estado = 'pendiente'),
+            (SELECT COUNT(*) FROM contactos WHERE leido = 0)
     """)
     cifras = cursor.fetchone()
+
+    # Mensajes de contacto (primero los no leídos)
+    cursor.execute("SELECT id, nombre, email, mensaje, fecha, leido FROM contactos ORDER BY leido ASC, fecha DESC LIMIT 50")
+    mensajes = cursor.fetchall()
+
+    # Últimas valoraciones
+    cursor.execute("""
+        SELECT v.id, v.fecha, p.nombre, v.estrellas, v.comentario
+        FROM valoraciones v
+        JOIN psicologos p ON p.id = v.psicologo_id
+        ORDER BY v.fecha DESC
+        LIMIT 30
+    """)
+    valoraciones = cursor.fetchall()
 
     # Psicólogos: primero los pendientes de aprobar
     cursor.execute("""
@@ -2465,6 +2819,7 @@ def admin():
         <div class="cifra"><strong>{cifras[1]}</strong><span>Pendientes de aprobar</span></div>
         <div class="cifra"><strong>{cifras[2]}</strong><span>Pacientes</span></div>
         <div class="cifra"><strong>{cifras[3]}</strong><span>Solicitudes pendientes</span></div>
+        <div class="cifra"><strong>{cifras[4]}</strong><span>Mensajes sin leer</span></div>
     </div>
 
 
@@ -2586,11 +2941,136 @@ def admin():
     </div>
 """
 
+    # ---------- Mensajes de contacto ----------
+    cadena += """
+
+    <h3>Mensajes de contacto</h3>
+"""
+    if not mensajes:
+        cadena += '    <p class="vacio" style="display:block">Todavía no hay mensajes.</p>\n'
+    else:
+        cadena += """
+    <div class="tabla-admin">
+        <table>
+            <tr>
+                <th>Fecha</th>
+                <th>De</th>
+                <th>Mensaje</th>
+                <th>Acciones</th>
+            </tr>
+"""
+        for m in mensajes:
+            boton_leido = ""
+            if not m[5]:
+                boton_leido = f"""
+                    <form method="post" action="/admin/contacto/{m[0]}/leido">
+                        <button class="boton-mini verde">Marcar leído</button>
+                    </form>"""
+            cadena += f"""
+            <tr class="{'' if m[5] else 'no-leido'}">
+                <td>{m[4].strftime('%d/%m/%Y %H:%M')}</td>
+                <td>{escape(m[1])}<br><span class="colegiado">{escape(m[2])}</span></td>
+                <td style="font-weight:normal">{escape(m[3])}</td>
+                <td class="acciones">
+                    {boton_leido}
+                    <form method="post" action="/admin/contacto/{m[0]}/eliminar"
+                          onsubmit="return confirm('¿Eliminar este mensaje?')">
+                        <button class="boton-mini rojo">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+"""
+        cadena += """
+        </table>
+    </div>
+"""
+
+    # ---------- Valoraciones ----------
+    cadena += """
+
+    <h3>Últimas valoraciones</h3>
+"""
+    if not valoraciones:
+        cadena += '    <p class="vacio" style="display:block">Todavía no hay valoraciones.</p>\n'
+    else:
+        cadena += """
+    <div class="tabla-admin">
+        <table>
+            <tr>
+                <th>Fecha</th>
+                <th>Psicólogo/a</th>
+                <th>Nota</th>
+                <th>Comentario</th>
+                <th>Acciones</th>
+            </tr>
+"""
+        for v in valoraciones:
+            cadena += f"""
+            <tr>
+                <td>{v[1].strftime('%d/%m/%Y')}</td>
+                <td>{escape(v[2])}</td>
+                <td><span class="estrellas">{estrellas_texto(v[3])}</span></td>
+                <td>{escape(v[4] or '')}</td>
+                <td class="acciones">
+                    <form method="post" action="/admin/valoracion/{v[0]}/eliminar"
+                          onsubmit="return confirm('¿Eliminar esta valoración?')">
+                        <button class="boton-mini rojo">Eliminar</button>
+                    </form>
+                </td>
+            </tr>
+"""
+        cadena += """
+        </table>
+    </div>
+"""
+
     cadena += """
 </main>
 """ + pie()
 
     return cadena
+
+
+# Marcar un mensaje de contacto como leído
+@aplicacion.route("/admin/contacto/<int:id_mensaje>/leido", methods=["POST"])
+def admin_contacto_leido(id_mensaje):
+    if not es_admin():
+        return redirect("/entrar?tipo=admin")
+    conexion = conectar()
+    cursor = conexion.cursor()
+    cursor.execute("UPDATE contactos SET leido = 1 WHERE id = %s", (id_mensaje,))
+    conexion.commit()
+    cursor.close()
+    conexion.close()
+    return redirect("/admin?hecho=" + quote("Mensaje marcado como leído."))
+
+
+# Eliminar un mensaje de contacto
+@aplicacion.route("/admin/contacto/<int:id_mensaje>/eliminar", methods=["POST"])
+def admin_contacto_eliminar(id_mensaje):
+    if not es_admin():
+        return redirect("/entrar?tipo=admin")
+    conexion = conectar()
+    cursor = conexion.cursor()
+    cursor.execute("DELETE FROM contactos WHERE id = %s", (id_mensaje,))
+    conexion.commit()
+    cursor.close()
+    conexion.close()
+    return redirect("/admin?hecho=" + quote("Mensaje eliminado."))
+
+
+# Eliminar una valoración (por ejemplo, si es ofensiva)
+@aplicacion.route("/admin/valoracion/<int:id_valoracion>/eliminar", methods=["POST"])
+def admin_valoracion_eliminar(id_valoracion):
+    if not es_admin():
+        return redirect("/entrar?tipo=admin")
+    conexion = conectar()
+    cursor = conexion.cursor()
+    cursor.execute("DELETE FROM valoraciones WHERE id = %s", (id_valoracion,))
+    conexion.commit()
+    cursor.close()
+    conexion.close()
+    return redirect("/admin?hecho=" + quote("Valoración eliminada."))
 
 
 # Aprobar u ocultar un psicólogo (cambia de 0 a 1 o de 1 a 0)
@@ -2669,6 +3149,490 @@ def admin_eliminar_paciente(id_paciente):
     conexion.close()
 
     return redirect("/admin?hecho=" + quote(fila[0] + " se ha eliminado."))
+
+
+# -------------------------------------------------
+# CONTACTO
+# -------------------------------------------------
+
+@aplicacion.route("/contacto", methods=["GET", "POST"])
+def contacto():
+
+    yo = usuario()
+    error = ""
+    enviado = False
+
+    # Si ha iniciado sesión, relleno su nombre y correo
+    nombre_defecto = ""
+    email_defecto = ""
+    if yo and yo["tipo"] in ("paciente", "psicologo"):
+        conexion = conectar()
+        cursor = conexion.cursor()
+        cursor.execute("SELECT nombre, email FROM " + TABLAS[yo["tipo"]] + " WHERE id = %s", (yo["id"],))
+        fila = cursor.fetchone()
+        cursor.close()
+        conexion.close()
+        if fila:
+            nombre_defecto, email_defecto = fila
+
+    if request.method == "POST":
+
+        nombre = request.form.get("nombre", "").strip()[:100]
+        email = request.form.get("email", "").strip().lower()[:150]
+        mensaje = request.form.get("mensaje", "").strip()[:2000]
+
+        # Máximo 5 mensajes por hora desde la misma IP (contra el spam)
+        claves = ["contacto:" + ip_visitante()]
+
+        if not nombre or "@" not in email or not mensaje:
+            error = "Rellena tu nombre, un correo válido y el mensaje."
+        elif esta_bloqueado(claves, maximo=5, minutos=60):
+            error = "Has enviado demasiados mensajes. Inténtalo más tarde."
+        else:
+            conexion = conectar()
+            cursor = conexion.cursor()
+            cursor.execute(
+                "INSERT INTO contactos (nombre, email, mensaje) VALUES (%s, %s, %s)",
+                (nombre, email, mensaje)
+            )
+            conexion.commit()
+            cursor.close()
+            conexion.close()
+            apuntar_fallo(claves)          # Cuenta como un envío más
+            enviado = True
+
+    datos = request.form if (request.method == "POST" and not enviado) else {}
+
+    cadena = cabecera("Contacto — Encuéntrame") + """
+
+<main class="contenedor">
+
+    <div class="caja-acceso" style="max-width:560px">
+
+        <h2>Contacto</h2>
+        <p style="color:var(--tinta-suave);margin-top:-6px">¿Tienes una duda, una sugerencia o has encontrado un error? Escríbenos.</p>
+"""
+
+    if enviado:
+        cadena += """
+        <div class="aviso" style="margin:0 0 16px 0">✓ Mensaje enviado. Gracias por escribirnos.</div>
+        <a class="boton" href="/">Volver al inicio</a>
+"""
+    else:
+        if error:
+            cadena += '        <div class="error">' + escape(error) + '</div>\n'
+        cadena += """
+        <form method="post" action="/contacto">
+
+            <div class="campo">
+                <label>Tu nombre</label>
+                <input type="text" name="nombre" required maxlength="100" value='""" + escape(datos.get("nombre", nombre_defecto)) + """'>
+            </div>
+
+            <div class="campo">
+                <label>Correo electrónico</label>
+                <input type="email" name="email" required maxlength="150" value='""" + escape(datos.get("email", email_defecto)) + """'>
+            </div>
+
+            <div class="campo">
+                <label>Mensaje</label>
+                <textarea name="mensaje" required maxlength="2000">""" + escape(datos.get("mensaje", "")) + """</textarea>
+                <div class="pista">No escribas datos de salud ni información personal sensible.</div>
+            </div>
+
+            <button class="boton" style="width:100%">Enviar mensaje</button>
+
+        </form>
+"""
+
+    cadena += """
+    </div>
+
+</main>
+""" + pie()
+
+    return cadena
+
+
+# -------------------------------------------------
+# RECUPERAR LA CONTRASEÑA
+# -------------------------------------------------
+
+# Guardo solo el hash del código del enlace (si alguien ve la base de datos, no puede usarlo)
+def hash_token(token):
+    return hashlib.sha256(token.encode()).hexdigest()
+
+
+@aplicacion.route("/olvide", methods=["GET", "POST"])
+def olvide():
+
+    tipo = tipo_elegido()
+    mensaje = ""
+    error = ""
+
+    if request.method == "POST":
+
+        email = request.form.get("email", "").strip().lower()
+        claves = ["olvide:" + ip_visitante(), "olvide:" + email]
+
+        if esta_bloqueado(claves, maximo=3, minutos=60):
+            error = "Has pedido demasiados enlaces. Inténtalo dentro de una hora."
+        else:
+            apuntar_fallo(claves)
+
+            conexion = conectar()
+            cursor = conexion.cursor()
+            cursor.execute("SELECT id, nombre FROM " + TABLAS[tipo] + " WHERE email = %s", (email,))
+            fila = cursor.fetchone()
+
+            if fila:
+                # Anulo los enlaces anteriores y creo uno nuevo (1 hora, un solo uso)
+                token = secrets.token_urlsafe(32)
+                cursor.execute(
+                    "UPDATE recuperaciones SET usado = 1 WHERE tipo = %s AND usuario_id = %s AND usado = 0",
+                    (tipo, fila[0])
+                )
+                cursor.execute(
+                    "INSERT INTO recuperaciones (tipo, usuario_id, token_hash, expira) VALUES (%s, %s, %s, %s)",
+                    (tipo, fila[0], hash_token(token), ahora() + timedelta(hours=1))
+                )
+                conexion.commit()
+
+                # En el servidor uso la dirección fija (no la que manda el navegador)
+                base = URL_PUBLICA if EN_SERVIDOR else request.host_url.rstrip("/")
+                enlace = base + "/restablecer/" + token
+
+                texto = ("Hola, " + fila[1] + ":\n\n"
+                         "Has pedido cambiar tu contraseña de Encuéntrame. Abre este enlace (caduca en 1 hora):\n\n"
+                         + enlace + "\n\n"
+                         "Si no lo has pedido tú, ignora este correo: tu contraseña no cambiará.")
+
+                if not enviar_correo(email, "Cambiar tu contraseña de Encuéntrame", texto) and not EN_SERVIDOR:
+                    # En mi PC, si no hay correo configurado, enseño el enlace en la terminal
+                    print("[SOLO EN LOCAL] Enlace para cambiar la contraseña:", enlace)
+
+            cursor.close()
+            conexion.close()
+
+            # Siempre el mismo mensaje: así nadie puede saber qué correos están registrados
+            mensaje = "Si existe una cuenta con ese correo, te hemos enviado un enlace para cambiar la contraseña. Revisa también la carpeta de spam."
+
+    quien = "paciente" if tipo == "paciente" else "psicólogo/a"
+
+    cadena = cabecera("Recuperar contraseña — Encuéntrame") + """
+
+<main class="contenedor">
+
+    <div class="caja-acceso">
+
+        <h2>¿Has olvidado tu contraseña?</h2>
+        <p style="color:var(--tinta-suave);margin-top:-6px">Cuenta de """ + quien + """. Te enviaremos un enlace a tu correo.</p>
+"""
+
+    if mensaje:
+        cadena += '        <div class="aviso" style="margin:0 0 16px 0">✓ ' + escape(mensaje) + '</div>\n'
+    else:
+        if error:
+            cadena += '        <div class="error">' + escape(error) + '</div>\n'
+        cadena += """
+        <form method="post" action="/olvide">
+            <input type="hidden" name="tipo" value='""" + tipo + """'>
+            <div class="campo">
+                <label>Correo electrónico</label>
+                <input type="email" name="email" required>
+            </div>
+            <button class="boton" style="width:100%">Enviar enlace</button>
+        </form>
+"""
+
+    cadena += """
+        <p class="cambiar"><a href="/entrar?tipo=""" + tipo + """">Volver a entrar</a></p>
+
+    </div>
+
+</main>
+""" + pie()
+
+    return cadena
+
+
+@aplicacion.route("/restablecer/<token>", methods=["GET", "POST"])
+def restablecer(token):
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    # Busco el enlace: tiene que existir, no estar usado y no haber caducado
+    cursor.execute(
+        "SELECT id, tipo, usuario_id FROM recuperaciones WHERE token_hash = %s AND usado = 0 AND expira > %s",
+        (hash_token(token), ahora())
+    )
+    fila = cursor.fetchone()
+
+    if fila is None or fila[1] not in ("paciente", "psicologo"):
+        cursor.close()
+        conexion.close()
+        return cabecera("Enlace no válido — Encuéntrame") + """
+<main class="contenedor">
+    <div class="caja-acceso">
+        <h2>Enlace no válido</h2>
+        <p>Este enlace ha caducado o ya se ha usado. Puedes pedir uno nuevo.</p>
+        <a class="boton" href="/olvide">Pedir otro enlace</a>
+    </div>
+</main>
+""" + pie(), 400
+
+    id_recuperacion, tipo, usuario_id = fila
+    error = ""
+
+    if request.method == "POST":
+
+        password = request.form.get("password", "")
+        repetida = request.form.get("password2", "")
+
+        if len(password) < 8:
+            error = "La contraseña debe tener al menos 8 caracteres."
+        elif password != repetida:
+            error = "Las dos contraseñas no coinciden."
+        else:
+            cursor.execute(
+                "UPDATE " + TABLAS[tipo] + " SET password_hash = %s WHERE id = %s",
+                (generate_password_hash(password), usuario_id)
+            )
+            cursor.execute("UPDATE recuperaciones SET usado = 1 WHERE id = %s", (id_recuperacion,))
+            cursor.execute("SELECT email FROM " + TABLAS[tipo] + " WHERE id = %s", (usuario_id,))
+            correo = cursor.fetchone()
+            conexion.commit()
+            cursor.close()
+            conexion.close()
+
+            # Quito el bloqueo de intentos de ese correo
+            if correo:
+                intentos_fallidos.pop("correo:" + tipo + ":" + correo[0], None)
+
+            session.clear()
+            return redirect("/entrar?tipo=" + tipo + "&restablecida=1")
+
+    cursor.close()
+    conexion.close()
+
+    cadena = cabecera("Nueva contraseña — Encuéntrame") + """
+
+<main class="contenedor">
+
+    <div class="caja-acceso">
+
+        <h2>Nueva contraseña</h2>
+""" + ('        <div class="error">' + escape(error) + '</div>\n' if error else "") + """
+        <form method="post" action="/restablecer/""" + escape(token) + """">
+            <div class="campo">
+                <label>Nueva contraseña</label>
+                <input type="password" name="password" required minlength="8">
+                <div class="pista">Mínimo 8 caracteres.</div>
+            </div>
+            <div class="campo">
+                <label>Repite la contraseña</label>
+                <input type="password" name="password2" required minlength="8">
+            </div>
+            <button class="boton" style="width:100%">Guardar contraseña</button>
+        </form>
+
+    </div>
+
+</main>
+""" + pie()
+
+    return cadena
+
+
+# -------------------------------------------------
+# VALORAR A UN PSICÓLOGO (PACIENTE)
+# -------------------------------------------------
+
+@aplicacion.route("/valorar/<int:id_solicitud>", methods=["POST"])
+def valorar(id_solicitud):
+
+    yo = usuario()
+    if yo is None or yo["tipo"] != "paciente":
+        return redirect("/entrar?tipo=paciente")
+
+    try:
+        estrellas = int(request.form.get("estrellas", "0"))
+    except ValueError:
+        estrellas = 0
+    comentario = request.form.get("comentario", "").strip()[:1000]
+
+    if estrellas < 1 or estrellas > 5:
+        return redirect("/mis-solicitudes")
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    # La solicitud tiene que ser suya, estar contactada y no tener valoración todavía
+    cursor.execute("""
+        SELECT s.psicologo_id
+        FROM solicitudes s
+        LEFT JOIN valoraciones v ON v.solicitud_id = s.id
+        WHERE s.id = %s AND s.paciente_id = %s AND s.estado = 'contactado' AND v.id IS NULL
+    """, (id_solicitud, yo["id"]))
+    fila = cursor.fetchone()
+
+    if fila:
+        cursor.execute(
+            "INSERT INTO valoraciones (solicitud_id, psicologo_id, paciente_id, estrellas, comentario) "
+            "VALUES (%s, %s, %s, %s, %s)",
+            (id_solicitud, fila[0], yo["id"], estrellas, comentario)
+        )
+        conexion.commit()
+
+    cursor.close()
+    conexion.close()
+
+    return redirect("/mis-solicitudes" + ("?valorado=1" if fila else ""))
+
+
+# -------------------------------------------------
+# AGENDA DEL PSICÓLOGO
+# -------------------------------------------------
+
+@aplicacion.route("/agenda", methods=["GET", "POST"])
+def agenda():
+
+    yo = usuario()
+    if yo is None or yo["tipo"] != "psicologo":
+        return redirect("/entrar?tipo=psicologo")
+
+    error = ""
+    aviso = ""
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    # ---------- Añadir una hora libre ----------
+    if request.method == "POST":
+        try:
+            fecha_hora = datetime.strptime(
+                request.form.get("fecha", "") + " " + request.form.get("hora", ""), "%Y-%m-%d %H:%M"
+            )
+        except ValueError:
+            fecha_hora = None
+
+        if fecha_hora is None:
+            error = "Elige una fecha y una hora válidas."
+        elif fecha_hora <= ahora():
+            error = "La hora tiene que ser en el futuro."
+        elif fecha_hora > ahora() + timedelta(days=365):
+            error = "Solo puedes añadir horas para el próximo año."
+        else:
+            cursor.execute(
+                "SELECT id FROM horarios WHERE psicologo_id = %s AND fecha_hora = %s",
+                (yo["id"], fecha_hora)
+            )
+            if cursor.fetchone():
+                error = "Ya tienes esa hora en tu agenda."
+            else:
+                cursor.execute(
+                    "INSERT INTO horarios (psicologo_id, fecha_hora) VALUES (%s, %s)",
+                    (yo["id"], fecha_hora)
+                )
+                conexion.commit()
+                aviso = "Hora añadida: " + fecha_bonita(fecha_hora)
+
+    if request.args.get("borrada"):
+        aviso = "Hora eliminada."
+
+    # ---------- Mis horas futuras ----------
+    cursor.execute("""
+        SELECT h.id, h.fecha_hora, s.nombre_paciente
+        FROM horarios h
+        LEFT JOIN solicitudes s ON s.id = h.solicitud_id
+        WHERE h.psicologo_id = %s AND h.fecha_hora > %s
+        ORDER BY h.fecha_hora
+    """, (yo["id"], ahora()))
+    horas = cursor.fetchall()
+
+    cursor.close()
+    conexion.close()
+
+    manana = (ahora() + timedelta(days=1)).strftime("%Y-%m-%d")
+
+    cadena = cabecera("Mi agenda — Encuéntrame") + """
+
+<main class="contenedor">
+
+    <div class="titulo-seccion">
+        <div>
+            <h2>Mi agenda</h2>
+            <p>Añade las horas en las que puedes atender. Los pacientes podrán elegir una al pedir la primera sesión.</p>
+        </div>
+    </div>
+"""
+
+    if aviso:
+        cadena += '    <div class="aviso" style="margin:0 0 16px 0">✓ ' + escape(aviso) + '</div>\n'
+    if error:
+        cadena += '    <div class="error">' + escape(error) + '</div>\n'
+
+    cadena += """
+    <form method="post" action="/agenda" class="form-linea" style="margin-bottom:26px">
+        <div class="campo">
+            <label>Día</label>
+            <input type="date" name="fecha" required min='""" + manana + """' value='""" + manana + """'>
+        </div>
+        <div class="campo">
+            <label>Hora</label>
+            <input type="time" name="hora" required step="900" value="10:00">
+        </div>
+        <button class="boton">Añadir hora libre</button>
+    </form>
+"""
+
+    if not horas:
+        cadena += '    <p class="vacio" style="display:block">Todavía no tienes horas libres en tu agenda.</p>\n'
+
+    for h in horas:
+        if h[2]:
+            estado = '<span class="insignia si">Reservada por ' + escape(h[2]) + '</span>'
+            accion = ""
+        else:
+            estado = '<span class="insignia no">Libre</span>'
+            accion = f"""
+            <form method="post" action="/agenda/{h[0]}/eliminar">
+                <button class="boton-mini rojo">Quitar</button>
+            </form>"""
+        cadena += f"""
+    <div class="fila-horario">
+        <div><strong>{fecha_bonita(h[1])}</strong> &nbsp; {estado}</div>
+        {accion}
+    </div>
+"""
+
+    cadena += """
+</main>
+""" + pie()
+
+    return cadena
+
+
+# Quitar una hora libre (solo si es mía y nadie la ha reservado)
+@aplicacion.route("/agenda/<int:id_horario>/eliminar", methods=["POST"])
+def agenda_eliminar(id_horario):
+
+    yo = usuario()
+    if yo is None or yo["tipo"] != "psicologo":
+        return redirect("/entrar?tipo=psicologo")
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+    cursor.execute(
+        "DELETE FROM horarios WHERE id = %s AND psicologo_id = %s AND solicitud_id IS NULL",
+        (id_horario, yo["id"])
+    )
+    conexion.commit()
+    cursor.close()
+    conexion.close()
+
+    return redirect("/agenda?borrada=1")
 
 
 # Ejecuto la aplicación
