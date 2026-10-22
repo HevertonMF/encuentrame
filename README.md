@@ -47,7 +47,8 @@ Aplicación web para ayudar a las personas a encontrar al psicólogo que mejor s
 - Contraseñas guardadas con hash (werkzeug).
 - Consultas con parámetros (`%s`) para evitar la inyección SQL.
 - Todo el texto de los usuarios se escapa antes de mostrarlo.
-- Cookies de sesión `HttpOnly`, `SameSite=Lax` y, en el servidor, solo por HTTPS.
+- Protección **CSRF**: todos los formularios llevan un código secreto de la sesión.
+- Cookies de sesión `HttpOnly`, `SameSite=Lax` y, en el servidor, solo por HTTPS (con redirección automática).
 - Cada usuario solo puede ver y cambiar sus propios datos.
 
 ## Base de datos

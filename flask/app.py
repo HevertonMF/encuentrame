@@ -11,6 +11,9 @@ from html import escape                                 # Para mostrar texto de 
 from urllib.parse import quote                          # Para pasar texto por la URL
 import os                                               # Para guardar las fotos
 import uuid                                             # Para dar nombres únicos a las fotos
+import secrets                                          # Para el código anti-CSRF
+import hmac                                             # Para comparar el código de forma segura
+import re                                               # Para meter el código en los formularios
 
 
 # Datos de conexión a MySQL
@@ -122,6 +125,47 @@ def copia_diaria():
 def cabeceras_seguridad(respuesta):
     if EN_SERVIDOR:
         respuesta.headers["Strict-Transport-Security"] = "max-age=31536000"
+    return respuesta
+
+
+# -------------------------------------------------
+# PROTECCIÓN CSRF
+# Cada visitante tiene un código secreto en su sesión. Va escondido en todos
+# los formularios y si un POST no lo trae (por ejemplo, desde otra web), lo rechazo.
+# -------------------------------------------------
+
+def codigo_csrf():
+    if "csrf" not in session:
+        session["csrf"] = secrets.token_hex(32)
+    return session["csrf"]
+
+
+@aplicacion.before_request
+def comprobar_csrf():
+    if request.method == "POST":
+        enviado = request.form.get("csrf", "")
+        guardado = session.get("csrf", "")
+        if not guardado or not hmac.compare_digest(enviado, guardado):
+            return cabecera("Formulario caducado — Encuéntrame") + """
+<main class="contenedor">
+    <div class="caja-acceso">
+        <h2>Formulario caducado</h2>
+        <p>Por seguridad no hemos podido procesar el formulario. Vuelve atrás, recarga la página e inténtalo de nuevo.</p>
+        <a class="boton" href="/">Volver al inicio</a>
+    </div>
+</main>
+""" + pie(), 400
+
+
+# Meto el código en todos los formularios POST de la página
+@aplicacion.after_request
+def meter_csrf(respuesta):
+    if respuesta.mimetype == "text/html" and not respuesta.direct_passthrough:
+        html = respuesta.get_data(as_text=True)
+        if '<form method="post"' in html:
+            campo = '<input type="hidden" name="csrf" value="' + codigo_csrf() + '">'
+            html = re.sub(r'(<form method="post"[^>]*>)', lambda m: m.group(1) + campo, html)
+            respuesta.set_data(html)
     return respuesta
 
 # Las fotos de perfil se guardan en la carpeta "fotos" (máximo 2 MB)
