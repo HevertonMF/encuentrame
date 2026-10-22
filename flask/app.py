@@ -90,7 +90,23 @@ aplicacion.config["SESSION_COOKIE_HTTPONLY"] = True
 aplicacion.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 # En el servidor (cuando existe ENCUENTRAME_CLAVE) la cookie solo viaja por HTTPS
-aplicacion.config["SESSION_COOKIE_SECURE"] = "ENCUENTRAME_CLAVE" in os.environ
+EN_SERVIDOR = "ENCUENTRAME_CLAVE" in os.environ
+aplicacion.config["SESSION_COOKIE_SECURE"] = EN_SERVIDOR
+
+
+# En el servidor, si alguien entra por http lo mando a https
+@aplicacion.before_request
+def forzar_https():
+    if EN_SERVIDOR and request.headers.get("X-Forwarded-Proto") == "http":
+        return redirect(request.url.replace("http://", "https://", 1), code=301)
+
+
+# Y le digo al navegador que use siempre https en esta web
+@aplicacion.after_request
+def cabeceras_seguridad(respuesta):
+    if EN_SERVIDOR:
+        respuesta.headers["Strict-Transport-Security"] = "max-age=31536000"
+    return respuesta
 
 # Las fotos de perfil se guardan en la carpeta "fotos" (máximo 2 MB)
 CARPETA_FOTOS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fotos")
