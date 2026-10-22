@@ -7,7 +7,7 @@ import os
 import urllib.request
 from datetime import datetime
 
-USUARIO = "hevertonmf"
+USUARIO = "encuentrame"
 ARCHIVO_REMOTO = "/home/" + USUARIO + "/backups/encuentrame_ultima.db"
 
 carpeta = os.path.dirname(os.path.abspath(__file__))
