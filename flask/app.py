@@ -1749,8 +1749,8 @@ def pagina_acceso(modo, tipo, error=""):
 
             <div class="campo">
                 <label>Contraseña</label>
-                <input type="password" name="password" required""" + (' minlength="6"' if es_registro else "") + """>
-                """ + ('<div class="pista">Mínimo 6 caracteres.</div>' if es_registro else "") + """
+                <input type="password" name="password" required""" + (' minlength="8"' if es_registro else "") + """>
+                """ + ('<div class="pista">Mínimo 8 caracteres.</div>' if es_registro else "") + """
             </div>
 """
 
@@ -1837,6 +1837,43 @@ def iniciar_sesion(tipo, id_usuario, nombre):
     return redirect(destinos[tipo])
 
 
+# -------------------------------------------------
+# LÍMITE DE INTENTOS DE LOGIN
+# Si alguien falla 5 veces en 15 minutos (con el mismo correo o desde la misma IP),
+# lo bloqueo 15 minutos. Así no se pueden probar miles de contraseñas.
+# -------------------------------------------------
+
+MAX_INTENTOS = 5
+MINUTOS_BLOQUEO = 15
+intentos_fallidos = {}          # {clave: [momentos de los fallos]}
+
+
+# IP real del visitante (en PythonAnywhere viene en una cabecera)
+def ip_visitante():
+    return request.headers.get("X-Real-IP") or request.remote_addr or "?"
+
+
+def claves_intento(tipo, email):
+    return ["correo:" + tipo + ":" + email, "ip:" + ip_visitante()]
+
+
+# Borro los fallos antiguos y digo si alguna clave está bloqueada
+def esta_bloqueado(claves):
+    ahora = datetime.now().timestamp()
+    bloqueado = False
+    for clave in claves:
+        recientes = [t for t in intentos_fallidos.get(clave, []) if ahora - t < MINUTOS_BLOQUEO * 60]
+        intentos_fallidos[clave] = recientes
+        if len(recientes) >= MAX_INTENTOS:
+            bloqueado = True
+    return bloqueado
+
+
+def apuntar_fallo(claves):
+    for clave in claves:
+        intentos_fallidos.setdefault(clave, []).append(datetime.now().timestamp())
+
+
 @aplicacion.route("/entrar", methods=["GET", "POST"])
 def entrar():
 
@@ -1847,6 +1884,11 @@ def entrar():
 
     email = request.form.get("email", "").strip().lower()
     password = request.form.get("password", "")
+
+    # ¿Demasiados intentos fallidos?
+    claves = claves_intento(tipo, email)
+    if esta_bloqueado(claves):
+        return pagina_acceso("entrar", tipo, "Demasiados intentos fallidos. Espera " + str(MINUTOS_BLOQUEO) + " minutos y vuelve a intentarlo."), 429
 
     # El nombre de la tabla sale de una lista fija, nunca del usuario
     tabla = TABLAS[tipo]
@@ -1860,8 +1902,11 @@ def entrar():
 
     # Compruebo la contraseña con el hash guardado
     if fila is None or not fila[2] or not check_password_hash(fila[2], password):
+        apuntar_fallo(claves)
         return pagina_acceso("entrar", tipo, "Correo o contraseña incorrectos.")
 
+    # Si entra bien, olvido los fallos de ese correo
+    intentos_fallidos.pop(claves[0], None)
     return iniciar_sesion(tipo, fila[0], fila[1])
 
 
@@ -1880,8 +1925,8 @@ def registro():
     if not nombre or not email:
         return pagina_acceso("registro", tipo, "Rellena el nombre y el correo.")
 
-    if len(password) < 6:
-        return pagina_acceso("registro", tipo, "La contraseña debe tener al menos 6 caracteres.")
+    if len(password) < 8:
+        return pagina_acceso("registro", tipo, "La contraseña debe tener al menos 8 caracteres.")
 
     numero_colegiado = request.form.get("numero_colegiado", "").strip().upper()
     if tipo == "psicologo" and not numero_colegiado:

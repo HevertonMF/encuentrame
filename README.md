@@ -44,7 +44,8 @@ Aplicación web para ayudar a las personas a encontrar al psicólogo que mejor s
 
 **Seguridad**
 - Ninguna contraseña ni clave está en el código: se leen de `config_local.py` (que no se sube) o de variables de entorno.
-- Contraseñas guardadas con hash (werkzeug).
+- Contraseñas guardadas con hash (werkzeug), de al menos 8 caracteres.
+- Límite de intentos de login: tras 5 fallos, bloqueo de 15 minutos (por correo y por IP).
 - Consultas con parámetros (`%s`) para evitar la inyección SQL.
 - Todo el texto de los usuarios se escapa antes de mostrarlo.
 - Protección **CSRF**: todos los formularios llevan un código secreto de la sesión.
