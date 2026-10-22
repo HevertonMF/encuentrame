@@ -6,3 +6,4 @@ backups/
 fotos/
 *.db
 config_local.py
+token_pythonanywhere.txt
