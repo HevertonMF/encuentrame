@@ -1,13 +1,11 @@
 # Primero importo la librería
 import mysql.connector
 
+# Las credenciales están en config_local.py (ese archivo NO se sube a GitHub)
+from config_local import DATOS_BD
+
 # Me conecto con las credenciales correctas
-connection = mysql.connector.connect(
-  host='localhost',
-  user='encuentrame',
-  password='Encuentrame123$',
-  database='encuentrame'
-)
+connection = mysql.connector.connect(**DATOS_BD)
 
 # Creo un cursor
 cursor = connection.cursor()

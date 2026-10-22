@@ -1,6 +1,7 @@
 /* Migración 03: número de colegiado, aprobación de perfiles y administradores
    - Solo AÑADE tablas y columnas, no borra nada
-   - Se puede ejecutar varias veces sin problemas */
+   - Se puede ejecutar varias veces sin problemas
+   - El administrador se crea aparte con crear_admin.py */
 
 USE encuentrame;
 
@@ -30,7 +31,5 @@ CREATE TABLE IF NOT EXISTS administradores (
     password_hash   VARCHAR(255) NOT NULL
 ) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 
-/* Administrador de prueba: admin@encuentrame.local / admin1234 */
-INSERT IGNORE INTO administradores (nombre, email, password_hash) VALUES
-('Administrador', 'admin@encuentrame.local',
- 'scrypt:32768:8:1$mQlVUAyQXHYgR3ts$9748b5c631575229c99c5cbfd7ad194d71e72a810cbd8b2e0b056ab01db90c2a088525811b12ef2fcafb5c0449a2b08a63bef56407fbdd05803e786c01d93188');
+/* El administrador se crea con: python crear_admin.py
+   (la contraseña se escribe en la terminal y no se guarda en el código) */

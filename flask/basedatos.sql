@@ -2,7 +2,8 @@
 CREATE DATABASE IF NOT EXISTS encuentrame
     CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE USER IF NOT EXISTS 'encuentrame'@'localhost' IDENTIFIED BY 'Encuentrame123$';
+/* Cambia CAMBIA_ESTA_CONTRASEÑA por tu contraseña y ponla también en config_local.py */
+CREATE USER IF NOT EXISTS 'encuentrame'@'localhost' IDENTIFIED BY 'CAMBIA_ESTA_CONTRASEÑA';
 GRANT ALL PRIVILEGES ON encuentrame.* TO 'encuentrame'@'localhost';
 FLUSH PRIVILEGES;
 

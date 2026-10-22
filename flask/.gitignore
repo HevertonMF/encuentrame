@@ -5,3 +5,4 @@ venv/
 backups/
 fotos/
 *.db
+config_local.py

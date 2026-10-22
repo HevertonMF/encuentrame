@@ -13,14 +13,18 @@ import os                                               # Para guardar las fotos
 import uuid                                             # Para dar nombres únicos a las fotos
 
 
-# Datos de conexión a la base de datos
-# En el servidor se leen de variables de entorno; si no existen, uso los de mi PC (XAMPP)
-DATOS_BD = {
-    "host": os.environ.get("ENCUENTRAME_BD_HOST", "localhost"),
-    "user": os.environ.get("ENCUENTRAME_BD_USUARIO", "encuentrame"),
-    "password": os.environ.get("ENCUENTRAME_BD_PASSWORD", "Encuentrame123$"),
-    "database": os.environ.get("ENCUENTRAME_BD_NOMBRE", "encuentrame")
-}
+# Datos de conexión a MySQL
+# - En mi PC están en config_local.py (ese archivo NO se sube a GitHub)
+# - Si no existe, se leen de variables de entorno
+try:
+    from config_local import DATOS_BD
+except ImportError:
+    DATOS_BD = {
+        "host": os.environ.get("ENCUENTRAME_BD_HOST", "localhost"),
+        "user": os.environ.get("ENCUENTRAME_BD_USUARIO", "encuentrame"),
+        "password": os.environ.get("ENCUENTRAME_BD_PASSWORD", ""),
+        "database": os.environ.get("ENCUENTRAME_BD_NOMBRE", "encuentrame")
+    }
 
 
 # Si existe ENCUENTRAME_BD_SQLITE (ruta del archivo .db) uso SQLite en vez de MySQL

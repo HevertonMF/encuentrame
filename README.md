@@ -2,18 +2,27 @@
 
 Aplicación web para ayudar a las personas a encontrar al psicólogo que mejor se adapta a su necesidad.
 
-El proyecto tiene dos versiones:
+## 🚀 Pruébala online
 
-| Versión | Carpeta | Tecnologías |
-|---|---|---|
-| **Web estática** (demo online) | raíz del repositorio | HTML · CSS · JavaScript (datos en `localStorage`) |
-| **Aplicación completa** | [`flask/`](flask/) | Python · Flask · MySQL / MariaDB |
+👉 **https://hevertonmf.pythonanywhere.com**
 
-🔗 **Demo de la versión estática:** https://hevertonmf.github.io/encuentrame/
+**Cómo probarla:**
+
+1. **Como paciente:** pulsa *Entrar → Crear cuenta*, busca un psicólogo por especialidad y envíale una solicitud. En *Mis solicitudes* verás su estado.
+2. **Como psicólogo/a:** crea una cuenta en la pestaña *Soy psicólogo/a* con un número de colegiado inventado (por ejemplo `TEST-1234`). Tu perfil quedará **pendiente de aprobación** hasta que lo revise el administrador.
+
+> ⚠️ Es un proyecto de estudio: los psicólogos son ficticios. **No uses tu contraseña habitual ni escribas datos personales reales.** Puedes eliminar tu cuenta cuando quieras desde la propia web.
 
 ---
 
-## Funcionalidades (versión Flask)
+## Versiones
+
+| Versión | Carpeta | Tecnologías |
+|---|---|---|
+| **Aplicación completa** (online) | [`flask/`](flask/) | Python · Flask · MySQL (local) / SQLite (servidor) |
+| **Prototipo estático** | raíz del repositorio | HTML · CSS · JavaScript (datos en `localStorage`) — [ver demo](https://hevertonmf.github.io/encuentrame/) |
+
+## Funcionalidades
 
 **Pacientes**
 - Registro e inicio de sesión con contraseñas cifradas (hash).
@@ -34,21 +43,23 @@ El proyecto tiene dos versiones:
 - Eliminar pacientes y ver las últimas solicitudes.
 
 **Seguridad**
+- Ninguna contraseña ni clave está en el código: se leen de `config_local.py` (que no se sube) o de variables de entorno.
+- Contraseñas guardadas con hash (werkzeug).
 - Consultas con parámetros (`%s`) para evitar la inyección SQL.
 - Todo el texto de los usuarios se escapa antes de mostrarlo.
+- Cookies de sesión `HttpOnly`, `SameSite=Lax` y, en el servidor, solo por HTTPS.
 - Cada usuario solo puede ver y cambiar sus propios datos.
 
 ## Base de datos
 
-Cinco tablas principales más la de administradores:
-
 - `psicologos`, `pacientes`, `especialidades`, `psicologo_especialidad` (relación N:M), `solicitudes`
 - `administradores`
 
-## Cómo ejecutarlo en local
+## Cómo ejecutarlo en local (MySQL / XAMPP)
 
-1. Arranca **MySQL** en XAMPP (o MariaDB en Linux).
-2. Crea la base de datos y aplica las migraciones en este orden:
+1. En `flask/basedatos.sql` cambia `CAMBIA_ESTA_CONTRASEÑA` por una contraseña tuya.
+2. Copia `flask/config_local.ejemplo.py` como `flask/config_local.py` y pon la misma contraseña.
+3. Crea la base de datos y aplica las migraciones:
 
    ```bash
    mysql -u root < flask/basedatos.sql
@@ -57,32 +68,27 @@ Cinco tablas principales más la de administradores:
    mysql -u root < flask/migracion_03.sql
    ```
 
-3. Instala las librerías y arranca la aplicación:
+4. Instala las librerías, crea tu administrador y arranca la aplicación:
 
    ```bash
    pip install flask mysql-connector-python
    cd flask
+   python crear_admin.py
    python app.py
    ```
 
-4. Abre http://localhost:5000
-
-**Cuentas de prueba** (solo para uso local):
-- Psicólogo: `marta.ibanez@ejemplo.com` / `demo1234`
-- Administrador: `admin@encuentrame.local` / `admin1234` → http://localhost:5000/entrar?tipo=admin
+5. Abre http://localhost:5000 (administración: http://localhost:5000/entrar?tipo=admin)
 
 ## Publicarlo en un servidor (PythonAnywhere)
 
-- En la cuenta gratuita no hay MySQL, así que la app usa **SQLite**: crea la base con `python crear_bd_sqlite.py /home/USUARIO/encuentrame.db` y define `ENCUENTRAME_BD_SQLITE` con esa ruta. En local sigue usando MySQL.
+- En la cuenta gratuita no hay MySQL, así que la app usa **SQLite**: crea la base con `python crear_bd_sqlite.py /home/USUARIO/encuentrame.db` y define `ENCUENTRAME_BD_SQLITE` con esa ruta.
 - Con un plan de pago se puede usar MySQL con `flask/pythonanywhere.sql` (compatible con MySQL 8).
-- Los psicólogos de ejemplo **no tienen contraseña**, así que nadie puede entrar con sus cuentas.
-- La base de datos (`*.db`) nunca se sube a GitHub.
-- Crea el administrador con `python crear_admin.py`: la contraseña se escribe en la terminal y no se guarda en el código.
-- Define estas variables de entorno (nunca las subas a GitHub):
-  `ENCUENTRAME_CLAVE`, `ENCUENTRAME_BD_HOST`, `ENCUENTRAME_BD_USUARIO`, `ENCUENTRAME_BD_PASSWORD`, `ENCUENTRAME_BD_NOMBRE`.
-- Con `ENCUENTRAME_CLAVE` definida, la cookie de sesión solo viaja por HTTPS.
+- Define `ENCUENTRAME_CLAVE` con una clave aleatoria (por ejemplo leída de un archivo privado del servidor).
+- Crea el administrador con `python crear_admin.py`.
+- Los psicólogos de ejemplo **no tienen contraseña**: nadie puede entrar con sus cuentas.
+- La base de datos (`*.db`) y `config_local.py` nunca se suben a GitHub.
 
-## Copias de seguridad
+## Copias de seguridad (local)
 
 - `backup.bat` guarda una copia de la base de datos (y de las fotos) en `backups/`.
 - `restaurar.bat` recupera la base de datos desde una de esas copias.
