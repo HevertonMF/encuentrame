@@ -16,7 +16,8 @@ import hmac                                             # Para comparar el códi
 import re                                               # Para meter el código en los formularios
 import hashlib                                          # Para guardar el hash de los enlaces de recuperación
 import json                                             # Para pasar los horarios libres al JavaScript
-import smtplib                                          # Para enviar correos
+import smtplib                                          # Para enviar correos (SMTP)
+import urllib.request                                   # Para enviar correos por la API de Brevo
 from email.message import EmailMessage                  # Para escribir los correos
 from datetime import timedelta                          # Para sumar tiempo a una fecha
 
@@ -135,6 +136,31 @@ URL_PUBLICA = os.environ.get("ENCUENTRAME_URL", "https://encuentrame.pythonanywh
 
 # Envío un correo. Devuelvo True si se ha enviado.
 def enviar_correo(destino, asunto, texto):
+
+    # En el servidor gratuito el correo normal (SMTP) está bloqueado:
+    # si hay clave de Brevo, envío por su API (HTTPS)
+    clave_brevo = os.environ.get("ENCUENTRAME_BREVO_CLAVE", "")
+    remitente = os.environ.get("ENCUENTRAME_CORREO_REMITENTE", CORREO.get("usuario", ""))
+    if clave_brevo and remitente:
+        datos = json.dumps({
+            "sender": {"name": "Encuéntrame", "email": remitente},
+            "to": [{"email": destino}],
+            "subject": asunto,
+            "textContent": texto
+        }).encode()
+        peticion = urllib.request.Request(
+            "https://api.brevo.com/v3/smtp/email",
+            data=datos,
+            headers={"api-key": clave_brevo, "Content-Type": "application/json", "Accept": "application/json"}
+        )
+        try:
+            with urllib.request.urlopen(peticion, timeout=20) as respuesta:
+                return respuesta.status in (200, 201, 202)
+        except Exception as error:
+            print("No se pudo enviar el correo (Brevo):", type(error).__name__)
+            return False
+
+    # Si no, uso Gmail por SMTP (funciona en mi PC)
     if not CORREO.get("usuario") or not CORREO.get("password"):
         return False
     mensaje = EmailMessage()
