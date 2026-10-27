@@ -48,6 +48,14 @@ Aplicación web para ayudar a las personas a encontrar al psicólogo que mejor s
 - Eliminar pacientes y ver las últimas solicitudes.
 - Leer y gestionar los **mensajes de contacto** y moderar las **valoraciones**.
 
+**Avisos por correo** (con Brevo)
+- Al psicólogo: cuando recibe una solicitud y cuando aprueban su perfil.
+- Al paciente: cuando el psicólogo marca su solicitud como contactada.
+- Los correos no incluyen el texto de las solicitudes, solo un enlace a la web.
+
+**Privacidad (RGPD)**
+- Página `/privacidad`, casilla de aceptación en el registro y el contacto (se guarda la fecha) y botón «Descargar mis datos» (JSON).
+
 **Contacto** (`/contacto`)
 - Formulario abierto a todos, con límite de 5 mensajes por hora contra el spam.
 
@@ -80,6 +88,7 @@ Aplicación web para ayudar a las personas a encontrar al psicólogo que mejor s
    mysql -u root < flask/migracion_02.sql
    mysql -u root < flask/migracion_03.sql
    mysql -u root < flask/migracion_04.sql
+   mysql -u root < flask/migracion_05.sql
    ```
 
 4. Instala las librerías, crea tu administrador y arranca la aplicación:

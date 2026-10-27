@@ -178,6 +178,21 @@ def enviar_correo(destino, asunto, texto):
         return False
 
 
+# Dominios inventados (los perfiles de ejemplo): nunca les envío correos
+DOMINIOS_FICTICIOS = ("ejemplo.com", "example.com", "example.org", "prueba.local")
+
+
+# Aviso por correo a un usuario. No incluyo datos de salud: solo un enlace a la web.
+def avisar(destino, asunto, texto):
+    destino = (destino or "").strip().lower()
+    dominio = destino.rsplit("@", 1)[-1]
+    if "@" not in destino or dominio in DOMINIOS_FICTICIOS or dominio.endswith((".local", ".invalid", ".test")):
+        return False
+    texto += ("\n\n---\nEncuéntrame · " + URL_PUBLICA + "\n"
+              "Este correo es automático. Proyecto de estudio: los perfiles de psicólogos son ficticios.")
+    return enviar_correo(destino, asunto, texto)
+
+
 # Ahora creo una aplicación base
 # La carpeta "logo" se sirve en /logo
 aplicacion = Flask(__name__, static_folder="logo", static_url_path="/logo")
@@ -987,6 +1002,35 @@ ESTILOS = """
         font-weight:bold;
     }
 
+    .aceptar{
+        display:flex !important;
+        gap:8px;
+        align-items:flex-start;
+        font-weight:normal !important;
+        color:var(--tinta) !important;
+    }
+
+    .aceptar input{
+        width:auto !important;
+        margin-top:4px;
+    }
+
+    .aceptar a, .legal a{
+        color:var(--morado-fuerte);
+    }
+
+    .legal{
+        max-width:760px;
+    }
+
+    .legal h3{
+        margin:26px 0 6px 0;
+    }
+
+    .legal p, .legal li{
+        color:var(--tinta-suave);
+    }
+
     .colegiado{
         font-size:12px;
         color:var(--tinta-gris);
@@ -1269,6 +1313,20 @@ def cabecera(titulo):
 
     <title>""" + titulo + """</title>
 
+    <meta name="description" content="Encuentra al psicólogo que mejor se adapta a lo que estás viviendo: duelo, ansiedad, pareja y más. Proyecto de estudio DAM.">
+
+    <!-- Vista previa al compartir el enlace (LinkedIn, WhatsApp, X...) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Encuéntrame">
+    <meta property="og:title" content="Encuéntrame — Encuentra quien te escuche">
+    <meta property="og:description" content="Conecta con psicólogos según lo que estás viviendo: duelo, ansiedad, pareja y más.">
+    <meta property="og:url" content='""" + URL_PUBLICA + """'>
+    <meta property="og:image" content='""" + URL_PUBLICA + """/logo/og-imagen.png'>
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="es_ES">
+    <meta name="twitter:card" content="summary_large_image">
+
     <link rel="icon" type="image/png" href="/logo/favicon-64.png">
     <link href="https://fonts.googleapis.com/css2?family=Carlito:wght@400;700&display=swap" rel="stylesheet">
 
@@ -1300,7 +1358,8 @@ def pie():
 
 <footer>
     © 2026 Encuéntrame · Proyecto de estudio DAM · Los perfiles son ficticios ·
-    <a href="/contacto" style="color:inherit">Contacto</a>
+    <a href="/contacto" style="color:inherit">Contacto</a> ·
+    <a href="/privacidad" style="color:inherit">Privacidad</a>
 </footer>
 
 </body>
@@ -1838,7 +1897,7 @@ def solicitud():
     cursor = conexion.cursor()
 
     # Compruebo que el psicólogo existe
-    cursor.execute("SELECT nombre FROM psicologos WHERE id = %s AND aprobado = 1", (psicologo_id,))
+    cursor.execute("SELECT nombre, email FROM psicologos WHERE id = %s AND aprobado = 1", (psicologo_id,))
     psicologo = cursor.fetchone()
 
     if psicologo is None:
@@ -1876,6 +1935,13 @@ def solicitud():
 
     cursor.close()
     conexion.close()
+
+    # Aviso al psicólogo (sin el texto de la solicitud, por privacidad)
+    avisar(psicologo[1], "Tienes una nueva solicitud en Encuéntrame",
+           "Hola, " + psicologo[0] + ":\n\n"
+           "Un paciente te ha enviado una solicitud de primera sesión"
+           + (" y ha reservado una de tus horas libres." if horario_id else ".") + "\n\n"
+           "Entra en tu panel para verla: " + URL_PUBLICA + "/panel")
 
     return redirect("/?enviado=" + quote(psicologo[0]))
 
@@ -2014,12 +2080,32 @@ def contactado(id_solicitud):
     conexion = conectar()
     cursor = conexion.cursor()
     cursor.execute(
-        "UPDATE solicitudes SET estado = 'contactado' WHERE id = %s AND psicologo_id = %s",
+        "UPDATE solicitudes SET estado = 'contactado' WHERE id = %s AND psicologo_id = %s AND estado = 'pendiente'",
         (id_solicitud, yo["id"])
     )
+    cambiada = cursor.rowcount == 1
+
+    # Correo de la cuenta del paciente (no el que escribió en el formulario)
+    paciente = None
+    if cambiada:
+        cursor.execute("""
+            SELECT pa.email, pa.nombre
+            FROM solicitudes s
+            JOIN pacientes pa ON pa.id = s.paciente_id
+            WHERE s.id = %s
+        """, (id_solicitud,))
+        paciente = cursor.fetchone()
+
     conexion.commit()
     cursor.close()
     conexion.close()
+
+    if paciente:
+        avisar(paciente[0], "Tu psicólogo/a ha respondido a tu solicitud",
+               "Hola, " + paciente[1] + ":\n\n"
+               + yo["nombre"] + " ha marcado tu solicitud como contactada. "
+               "Revisa tu correo y tu teléfono por si te ha escrito.\n\n"
+               "Puedes ver tus solicitudes y, si quieres, valorar la atención aquí: " + URL_PUBLICA + "/mis-solicitudes")
 
     return redirect("/panel")
 
@@ -2128,6 +2214,14 @@ def pagina_acceso(modo, tipo, error=""):
             <div class="campo">
                 <label>Breve presentación</label>
                 <textarea name="bio" placeholder="Cuenta en pocas líneas tu enfoque y experiencia.">""" + valor("bio") + """</textarea>
+            </div>
+"""
+
+    if es_registro:
+        cadena += """
+            <div class="campo">
+                <label class="aceptar"><input type="checkbox" name="acepto" value="1" required>
+                    He leído y acepto la <a href="/privacidad" target="_blank">política de privacidad</a></label>
             </div>
 """
 
@@ -2265,6 +2359,9 @@ def registro():
     if len(password) < 8:
         return pagina_acceso("registro", tipo, "La contraseña debe tener al menos 8 caracteres.")
 
+    if request.form.get("acepto") != "1":
+        return pagina_acceso("registro", tipo, "Para crear la cuenta tienes que aceptar la política de privacidad.")
+
     numero_colegiado = request.form.get("numero_colegiado", "").strip().upper()
     if tipo == "psicologo" and not numero_colegiado:
         return pagina_acceso("registro", tipo, "Escribe tu número de colegiado.")
@@ -2295,8 +2392,8 @@ def registro():
     if tipo == "paciente":
 
         cursor.execute(
-            "INSERT INTO pacientes (nombre, email, password_hash) VALUES (%s, %s, %s)",
-            (nombre, email, password_hash)
+            "INSERT INTO pacientes (nombre, email, password_hash, fecha_consentimiento) VALUES (%s, %s, %s, %s)",
+            (nombre, email, password_hash, ahora())
         )
         nuevo_id = cursor.lastrowid
 
@@ -2314,9 +2411,9 @@ def registro():
         texto_especialidades = ",".join(existentes[i] for i in elegidas)
 
         cursor.execute(
-            "INSERT INTO psicologos (nombre, email, numero_colegiado, password_hash, telefono, especialidades, bio) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-            (nombre, email, numero_colegiado, password_hash, telefono, texto_especialidades, bio)
+            "INSERT INTO psicologos (nombre, email, numero_colegiado, password_hash, telefono, especialidades, bio, fecha_consentimiento) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+            (nombre, email, numero_colegiado, password_hash, telefono, texto_especialidades, bio, ahora())
         )
 
         nuevo_id = cursor.lastrowid
@@ -2437,7 +2534,7 @@ def mis_solicitudes():
 """
 
     cadena += """
-    <p class="cambiar"><a class="enlace-peligro" href="/eliminar-cuenta">Eliminar mi cuenta</a></p>
+    <p class="cambiar"><a href="/mis-datos">Descargar mis datos</a> · <a class="enlace-peligro" href="/eliminar-cuenta">Eliminar mi cuenta</a></p>
 
 </main>
 """ + pie()
@@ -2635,7 +2732,7 @@ def perfil():
 
         </form>
 
-        <p class="cambiar"><a class="enlace-peligro" href="/eliminar-cuenta">Eliminar mi cuenta</a></p>
+        <p class="cambiar"><a href="/mis-datos">Descargar mis datos</a> · <a class="enlace-peligro" href="/eliminar-cuenta">Eliminar mi cuenta</a></p>
 
     </div>
 
@@ -3109,7 +3206,7 @@ def admin_aprobar(id_psicologo):
     conexion = conectar()
     cursor = conexion.cursor()
     cursor.execute("UPDATE psicologos SET aprobado = 1 - aprobado WHERE id = %s", (id_psicologo,))
-    cursor.execute("SELECT nombre, aprobado FROM psicologos WHERE id = %s", (id_psicologo,))
+    cursor.execute("SELECT nombre, aprobado, email FROM psicologos WHERE id = %s", (id_psicologo,))
     fila = cursor.fetchone()
     conexion.commit()
     cursor.close()
@@ -3117,6 +3214,12 @@ def admin_aprobar(id_psicologo):
 
     if fila is None:
         return redirect("/admin")
+
+    if fila[1] == 1:
+        avisar(fila[2], "Tu perfil ya está publicado en Encuéntrame",
+               "Hola, " + fila[0] + ":\n\n"
+               "Hemos revisado tu perfil y ya aparece en la web. Los pacientes ya pueden escribirte.\n\n"
+               "Consejo: añade tus horas libres en tu agenda para que puedan reservar: " + URL_PUBLICA + "/agenda")
 
     texto = fila[0] + (" ya aparece en la web." if fila[1] == 1 else " se ha ocultado de la web.")
     return redirect("/admin?hecho=" + quote(texto))
@@ -3212,6 +3315,8 @@ def contacto():
 
         if not nombre or "@" not in email or not mensaje:
             error = "Rellena tu nombre, un correo válido y el mensaje."
+        elif request.form.get("acepto") != "1":
+            error = "Para enviar el mensaje tienes que aceptar la política de privacidad."
         elif esta_bloqueado(claves, maximo=5, minutos=60):
             error = "Has enviado demasiados mensajes. Inténtalo más tarde."
         else:
@@ -3264,6 +3369,11 @@ def contacto():
                 <label>Mensaje</label>
                 <textarea name="mensaje" required maxlength="2000">""" + escape(datos.get("mensaje", "")) + """</textarea>
                 <div class="pista">No escribas datos de salud ni información personal sensible.</div>
+            </div>
+
+            <div class="campo">
+                <label class="aceptar"><input type="checkbox" name="acepto" value="1" required>
+                    He leído y acepto la <a href="/privacidad" target="_blank">política de privacidad</a></label>
             </div>
 
             <button class="boton" style="width:100%">Enviar mensaje</button>
@@ -3659,6 +3769,142 @@ def agenda_eliminar(id_horario):
     conexion.close()
 
     return redirect("/agenda?borrada=1")
+
+
+# -------------------------------------------------
+# POLÍTICA DE PRIVACIDAD
+# -------------------------------------------------
+
+@aplicacion.route("/privacidad")
+def privacidad():
+    return cabecera("Política de privacidad — Encuéntrame") + """
+
+<main class="contenedor legal">
+
+    <h2>Política de privacidad</h2>
+    <p><strong>Encuéntrame es un proyecto de estudio</strong> del ciclo de Desarrollo de Aplicaciones Multiplataforma (DAM).
+    Los perfiles de psicólogos son ficticios. Por favor, <strong>no escribas datos de salud reales</strong> ni información sensible.</p>
+
+    <h3>¿Quién es el responsable?</h3>
+    <p>Heverton Marques, estudiante de DAM, como autor del proyecto. Contacto: <a href="mailto:encuentrame.psi@gmail.com">encuentrame.psi@gmail.com</a>
+    o el <a href="/contacto">formulario de contacto</a>.</p>
+
+    <h3>¿Qué datos guardamos?</h3>
+    <ul>
+        <li><strong>Pacientes:</strong> nombre, correo, contraseña (solo cifrada, nunca en texto), las solicitudes que envías (con el teléfono si lo escribes), tus valoraciones y la fecha en que aceptaste esta política.</li>
+        <li><strong>Psicólogos:</strong> nombre, correo, teléfono, número de colegiado, especialidades, presentación, foto, horas de la agenda y la fecha en que aceptaste esta política.</li>
+        <li><strong>Formulario de contacto:</strong> nombre, correo y mensaje.</li>
+    </ul>
+
+    <h3>¿Para qué?</h3>
+    <p>Solo para que la web funcione: poner en contacto a pacientes y psicólogos, gestionar las citas y las valoraciones, y responder a los mensajes de contacto.
+    No vendemos ni cedemos los datos y no hay publicidad.</p>
+
+    <h3>¿Con qué base legal?</h3>
+    <p>Tu consentimiento, que das al crear la cuenta o al enviar el formulario de contacto. Puedes retirarlo en cualquier momento eliminando tu cuenta.</p>
+
+    <h3>¿Quién más trata los datos?</h3>
+    <ul>
+        <li><strong>PythonAnywhere</strong> (Anaconda Inc.): servidor donde está alojada la web y la base de datos.</li>
+        <li><strong>Brevo</strong>: envío de los correos automáticos (avisos y recuperación de contraseña). Los correos no incluyen el texto de tus solicitudes.</li>
+    </ul>
+
+    <h3>¿Cuánto tiempo?</h3>
+    <p>Mientras tengas la cuenta. Si la eliminas, se borran tus datos, tus solicitudes y tus valoraciones. Las copias de seguridad se renuevan y se borran en unos 14 días.</p>
+
+    <h3>Tus derechos</h3>
+    <ul>
+        <li><strong>Acceso y portabilidad:</strong> descarga todos tus datos desde «Descargar mis datos» (en Mis solicitudes o en Mi perfil).</li>
+        <li><strong>Rectificación:</strong> los psicólogos pueden editar su perfil; para otros cambios, escríbenos.</li>
+        <li><strong>Supresión:</strong> elimina tu cuenta desde la propia web en cualquier momento.</li>
+        <li>Puedes reclamar ante la <a href="https://www.aepd.es" target="_blank" rel="noopener">Agencia Española de Protección de Datos</a>.</li>
+    </ul>
+
+    <h3>Cookies</h3>
+    <p>Solo usamos una cookie técnica, necesaria para mantener tu sesión iniciada y proteger los formularios. No usamos cookies de publicidad ni de análisis.</p>
+
+    <h3>Seguridad</h3>
+    <p>La web funciona siempre con HTTPS, las contraseñas se guardan cifradas y cada usuario solo puede ver sus propios datos.</p>
+
+    <p style="margin-top:30px;font-size:13px">Última actualización: octubre de 2026.</p>
+
+</main>
+""" + pie()
+
+
+# -------------------------------------------------
+# DESCARGAR MIS DATOS (derecho de acceso y portabilidad)
+# -------------------------------------------------
+
+# Paso una fila de la base de datos a un diccionario que se pueda guardar en JSON
+def fila_a_dict(columnas, fila):
+    datos = {}
+    for nombre, valor in zip(columnas, fila):
+        datos[nombre] = valor.isoformat(" ") if isinstance(valor, datetime) else valor
+    return datos
+
+
+@aplicacion.route("/mis-datos")
+def mis_datos():
+
+    yo = usuario()
+    if yo is None or yo["tipo"] not in ("paciente", "psicologo"):
+        return redirect("/entrar")
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+
+    def consulta(columnas, sql, parametros):
+        cursor.execute(sql, parametros)
+        return [fila_a_dict(columnas, fila) for fila in cursor.fetchall()]
+
+    # Nunca incluyo el hash de la contraseña
+    if yo["tipo"] == "paciente":
+        cuenta = consulta(["nombre", "email", "telefono", "fecha_registro", "fecha_consentimiento"],
+                          "SELECT nombre, email, telefono, fecha_registro, fecha_consentimiento FROM pacientes WHERE id = %s", (yo["id"],))
+        datos = {
+            "tipo_de_cuenta": "paciente",
+            "cuenta": cuenta[0] if cuenta else {},
+            "solicitudes": consulta(
+                ["psicologo", "nombre", "email", "telefono", "resumen", "contacto", "estado", "fecha", "cita"],
+                """SELECT p.nombre, s.nombre_paciente, s.email_paciente, s.telefono, s.resumen, s.contacto, s.estado, s.fecha, h.fecha_hora
+                   FROM solicitudes s JOIN psicologos p ON p.id = s.psicologo_id
+                   LEFT JOIN horarios h ON h.solicitud_id = s.id
+                   WHERE s.paciente_id = %s ORDER BY s.fecha""", (yo["id"],)),
+            "valoraciones": consulta(
+                ["psicologo", "estrellas", "comentario", "fecha"],
+                """SELECT p.nombre, v.estrellas, v.comentario, v.fecha
+                   FROM valoraciones v JOIN psicologos p ON p.id = v.psicologo_id
+                   WHERE v.paciente_id = %s ORDER BY v.fecha""", (yo["id"],))
+        }
+    else:
+        cuenta = consulta(["nombre", "email", "numero_colegiado", "telefono", "especialidades", "bio", "foto", "aprobado", "fecha_registro", "fecha_consentimiento"],
+                          """SELECT nombre, email, numero_colegiado, telefono, especialidades, bio, foto, aprobado, fecha_registro, fecha_consentimiento
+                             FROM psicologos WHERE id = %s""", (yo["id"],))
+        datos = {
+            "tipo_de_cuenta": "psicologo",
+            "cuenta": cuenta[0] if cuenta else {},
+            "agenda": consulta(["fecha_hora", "reservada"],
+                               "SELECT fecha_hora, solicitud_id IS NOT NULL FROM horarios WHERE psicologo_id = %s ORDER BY fecha_hora", (yo["id"],)),
+            "solicitudes_recibidas": consulta(
+                ["paciente", "email", "telefono", "resumen", "contacto", "estado", "fecha"],
+                """SELECT nombre_paciente, email_paciente, telefono, resumen, contacto, estado, fecha
+                   FROM solicitudes WHERE psicologo_id = %s ORDER BY fecha""", (yo["id"],)),
+            "valoraciones_recibidas": consulta(["estrellas", "comentario", "fecha"],
+                                               "SELECT estrellas, comentario, fecha FROM valoraciones WHERE psicologo_id = %s ORDER BY fecha", (yo["id"],))
+        }
+
+    cursor.close()
+    conexion.close()
+
+    datos["descargado"] = ahora().isoformat(" ")
+    respuesta = aplicacion.response_class(
+        json.dumps(datos, ensure_ascii=False, indent=2, default=str),
+        mimetype="application/json"
+    )
+    respuesta.headers["Content-Disposition"] = "attachment; filename=mis-datos-encuentrame.json"
+    respuesta.headers["Cache-Control"] = "no-store"
+    return respuesta
 
 
 # Ejecuto la aplicación

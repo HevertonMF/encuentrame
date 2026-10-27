@@ -14,7 +14,8 @@ CREATE TABLE psicologos (
     password_hash     VARCHAR(255) NULL,
     foto              VARCHAR(255) NULL,
     fecha_registro    DATETIME DEFAULT CURRENT_TIMESTAMP,
-    aprobado          TINYINT(1) NOT NULL DEFAULT 0
+    aprobado          TINYINT(1) NOT NULL DEFAULT 0,
+    fecha_consentimiento DATETIME NULL
 ) CHARACTER SET utf8mb4;
 
 CREATE TABLE pacientes (
@@ -23,7 +24,8 @@ CREATE TABLE pacientes (
     email           VARCHAR(150) NOT NULL UNIQUE,
     password_hash   VARCHAR(255) NOT NULL,
     telefono        VARCHAR(30),
-    fecha_registro  DATETIME DEFAULT CURRENT_TIMESTAMP
+    fecha_registro  DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_consentimiento DATETIME NULL
 ) CHARACTER SET utf8mb4;
 
 CREATE TABLE especialidades (

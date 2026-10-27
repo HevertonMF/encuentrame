@@ -22,7 +22,8 @@ CREATE TABLE psicologos (
     password_hash     TEXT,
     foto              TEXT,
     fecha_registro    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    aprobado          INTEGER NOT NULL DEFAULT 0
+    aprobado          INTEGER NOT NULL DEFAULT 0,
+    fecha_consentimiento TIMESTAMP
 );
 
 CREATE TABLE pacientes (
@@ -31,7 +32,8 @@ CREATE TABLE pacientes (
     email           TEXT NOT NULL UNIQUE,
     password_hash   TEXT NOT NULL,
     telefono        TEXT,
-    fecha_registro  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    fecha_registro  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_consentimiento TIMESTAMP
 );
 
 CREATE TABLE especialidades (
@@ -119,6 +121,13 @@ CREATE TABLE IF NOT EXISTS horarios (
 if os.path.exists(ruta):
     conexion = sqlite3.connect(ruta)
     conexion.executescript(TABLAS_NUEVAS)
+
+    # Columnas nuevas (SQLite no tiene ADD COLUMN IF NOT EXISTS: miro antes si existen)
+    for tabla in ("pacientes", "psicologos"):
+        columnas = [fila[1] for fila in conexion.execute("PRAGMA table_info(" + tabla + ")")]
+        if "fecha_consentimiento" not in columnas:
+            conexion.execute("ALTER TABLE " + tabla + " ADD COLUMN fecha_consentimiento TIMESTAMP")
+
     conexion.commit()
     conexion.close()
     print("La base de datos", ruta, "ya existía: he añadido las tablas nuevas que faltaban.")
