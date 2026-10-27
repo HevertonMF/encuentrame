@@ -715,10 +715,71 @@ ESTILOS = """
         resize:vertical;
     }
 
-    .opciones label{
-        display:inline;
+    /* Opciones (correo / teléfono): casillas cuadradas con ✓, una al lado de otra */
+    .lista-opciones{
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+    }
+
+    .opciones label.opcion{
+        display:inline-flex;
+        align-items:center;
+        gap:10px;
+        margin:0;
+        padding:10px 16px;
+        border:1px solid var(--borde);
+        border-radius:12px;
         font-weight:normal;
-        margin-right:15px;
+        font-size:15px;
+        color:var(--tinta);
+        cursor:pointer;
+        user-select:none;
+    }
+
+    .opciones label.opcion:has(input:checked){
+        border-color:var(--lima-fuerte);
+        background:var(--superficie);
+    }
+
+    .opciones input[type=radio]{
+        appearance:none;
+        -webkit-appearance:none;
+        width:22px;
+        height:22px;
+        padding:0;
+        margin:0;
+        flex-shrink:0;
+        border:2px solid var(--morado);
+        border-radius:6px;
+        background:var(--fondo);
+        display:inline-grid;
+        place-content:center;
+        cursor:pointer;
+    }
+
+    .opciones input[type=radio]::before{
+        content:"✓";
+        font-size:15px;
+        font-weight:bold;
+        line-height:1;
+        color:#3A2A5C;
+        transform:scale(0);
+        transition:transform 0.12s;
+    }
+
+    .opciones input[type=radio]:checked{
+        background:var(--lima);
+        border-color:var(--lima-fuerte);
+    }
+
+    .opciones input[type=radio]:checked::before{
+        transform:scale(1);
+    }
+
+    .opciones input[type=radio]:focus-visible{
+        outline:2px solid var(--morado-fuerte);
+        outline-offset:2px;
     }
 
 
@@ -1758,8 +1819,10 @@ def inicio():
 
         <div class="campo opciones">
             <label style="display:block">Prefiero que me contacten por</label>
-            <label><input type="radio" name="contacto" value="email" checked> Correo</label>
-            <label><input type="radio" name="contacto" value="telefono"> Teléfono</label>
+            <div class="lista-opciones">
+                <label class="opcion"><input type="radio" name="contacto" value="email" checked> Correo</label>
+                <label class="opcion"><input type="radio" name="contacto" value="telefono"> Teléfono</label>
+            </div>
         </div>
 
         <button class="boton" style="width:100%">Enviar solicitud</button>
