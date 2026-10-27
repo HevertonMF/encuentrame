@@ -1321,9 +1321,13 @@ def cabecera(titulo):
     <meta property="og:title" content="Encuéntrame — Encuentra quien te escuche">
     <meta property="og:description" content="Conecta con psicólogos según lo que estás viviendo: duelo, ansiedad, pareja y más.">
     <meta property="og:url" content='""" + URL_PUBLICA + """'>
-    <meta property="og:image" content='""" + URL_PUBLICA + """/logo/og-imagen.png'>
+    <meta property="og:image" content='""" + URL_PUBLICA + """/logo/og-imagen.jpg?v=2'>
+    <meta property="og:image:secure_url" content='""" + URL_PUBLICA + """/logo/og-imagen.jpg?v=2'>
+    <meta property="og:image:type" content="image/jpeg">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Encuéntrame: encuentra quien te escuche">
+    <meta name="twitter:image" content='""" + URL_PUBLICA + """/logo/og-imagen.jpg?v=2'>
     <meta property="og:locale" content="es_ES">
     <meta name="twitter:card" content="summary_large_image">
 
