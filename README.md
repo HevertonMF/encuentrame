@@ -63,6 +63,7 @@ Aplicación web para ayudar a las personas a encontrar al psicólogo que mejor s
 
 **Contacto** (`/contacto`)
 - Formulario abierto a todos, con límite de 5 mensajes por hora contra el spam.
+- Cada mensaje llega también al correo del proyecto; al pulsar «Responder» se contesta directamente a quien escribió.
 
 **Seguridad**
 - Ninguna contraseña ni clave está en el código: se leen de `config_local.py` (que no se sube) o de variables de entorno.

@@ -130,12 +130,17 @@ except ImportError:
         "password": os.environ.get("ENCUENTRAME_CORREO_PASSWORD", "")
     }
 
+# Buzón del proyecto que recibe los mensajes del formulario de contacto
+CORREO_CONTACTO = (os.environ.get("ENCUENTRAME_CORREO_CONTACTO")
+                   or os.environ.get("ENCUENTRAME_CORREO_REMITENTE")
+                   or CORREO.get("usuario", ""))
+
 # Dirección pública de la web (para los enlaces de los correos)
 URL_PUBLICA = os.environ.get("ENCUENTRAME_URL", "https://encuentrame.pythonanywhere.com")
 
 
 # Envío un correo. Devuelvo True si se ha enviado.
-def enviar_correo(destino, asunto, texto):
+def enviar_correo(destino, asunto, texto, responder_a=None):
 
     # En el servidor gratuito el correo normal (SMTP) está bloqueado:
     # si hay clave de Brevo, envío por su API (HTTPS)
@@ -146,7 +151,8 @@ def enviar_correo(destino, asunto, texto):
             "sender": {"name": "Encuéntrame", "email": remitente},
             "to": [{"email": destino}],
             "subject": asunto,
-            "textContent": texto
+            "textContent": texto,
+            **({"replyTo": {"email": responder_a}} if responder_a else {})
         }).encode()
         peticion = urllib.request.Request(
             "https://api.brevo.com/v3/smtp/email",
@@ -167,6 +173,8 @@ def enviar_correo(destino, asunto, texto):
     mensaje["From"] = "Encuéntrame <" + CORREO["usuario"] + ">"
     mensaje["To"] = destino
     mensaje["Subject"] = asunto
+    if responder_a:
+        mensaje["Reply-To"] = responder_a
     mensaje.set_content(texto)
     try:
         with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=20) as servidor:
@@ -3685,6 +3693,20 @@ def contacto():
             apuntar_fallo(claves)          # Cuenta como un envío más
             enviado = True
 
+            # Copia al buzón del proyecto ("Responder" va directo a quien escribió)
+            if CORREO_CONTACTO:
+                nombre_limpio = " ".join(nombre.split())          # sin saltos de línea en el asunto
+                enviar_correo(
+                    CORREO_CONTACTO,
+                    "Nuevo mensaje de contacto: " + nombre_limpio,
+                    "Nombre: " + nombre_limpio + "\n"
+                    "Correo: " + email + "\n\n"
+                    "Mensaje:\n" + mensaje + "\n\n"
+                    "---\nPuedes responder directamente a este correo.\n"
+                    "Todos los mensajes están también en " + URL_PUBLICA + "/admin",
+                    responder_a=email
+                )
+
     datos = request.form if (request.method == "POST" and not enviado) else {}
 
     cadena = cabecera("Contacto — Encuéntrame") + """
@@ -4159,7 +4181,7 @@ def privacidad():
     <h3>¿Quién más trata los datos?</h3>
     <ul>
         <li><strong>PythonAnywhere</strong> (Anaconda Inc.): servidor donde está alojada la web y la base de datos.</li>
-        <li><strong>Brevo</strong>: envío de los correos automáticos (avisos y recuperación de contraseña). Los correos no incluyen el texto de tus solicitudes.</li>
+        <li><strong>Brevo</strong>: envío de los correos automáticos (avisos, recuperación de contraseña y copia de los mensajes de contacto al buzón del proyecto). Los avisos no incluyen el texto de tus solicitudes.</li>
     </ul>
 
     <h3>¿Cuánto tiempo?</h3>
