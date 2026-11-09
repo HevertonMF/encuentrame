@@ -312,10 +312,12 @@ ESTILOS = """
         --borde:rgba(58,42,92,0.12);
         --ok:#3F4A25;
         --ok-fondo:#F1F6DD;
+        color-scheme:light;
     }
 
+    /* Modo oscuro: sigue al sistema, salvo que el usuario haya elegido otra cosa con el interruptor */
     @media (prefers-color-scheme: dark){
-        :root{
+        :root:not([data-tema="claro"]){
             --fondo:#241A38;
             --superficie:#2F2347;
             --tinta:#F3EEFA;
@@ -326,7 +328,22 @@ ESTILOS = """
             --borde:rgba(243,238,250,0.14);
             --ok:#D3E39A;
             --ok-fondo:#3F4A25;
+            color-scheme:dark;
         }
+    }
+
+    :root[data-tema="oscuro"]{
+        --fondo:#241A38;
+        --superficie:#2F2347;
+        --tinta:#F3EEFA;
+        --tinta-suave:#CBBFE0;
+        --tinta-gris:#9C8FB8;
+        --morado:#B69BD6;
+        --morado-fuerte:#CDB8E6;
+        --borde:rgba(243,238,250,0.14);
+        --ok:#D3E39A;
+        --ok-fondo:#3F4A25;
+        color-scheme:dark;
     }
 
     *{
@@ -391,6 +408,188 @@ ESTILOS = """
 
     .menu a:hover{
         color:var(--morado-fuerte);
+    }
+
+    .menu{
+        display:flex;
+        align-items:center;
+        flex-wrap:wrap;
+        justify-content:flex-end;
+        row-gap:8px;
+    }
+
+    /* Menú del usuario (desplegable) */
+    .usuario{
+        position:relative;
+        margin-left:20px;
+    }
+
+    .usuario summary{
+        list-style:none;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        padding:5px 12px 5px 5px;
+        border:1px solid var(--borde);
+        border-radius:999px;
+        cursor:pointer;
+        font-weight:bold;
+        font-size:14px;
+        color:var(--tinta);
+        user-select:none;
+    }
+
+    .usuario summary::-webkit-details-marker{
+        display:none;
+    }
+
+    .usuario summary:hover,
+    .usuario[open] summary{
+        border-color:var(--morado);
+    }
+
+    .usuario .inicial{
+        width:28px;
+        height:28px;
+        border-radius:50%;
+        background:var(--morado);
+        color:white;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:13px;
+    }
+
+    .usuario .flecha{
+        font-size:11px;
+        color:var(--tinta-gris);
+        transition:transform 0.15s;
+    }
+
+    .usuario[open] .flecha{
+        transform:rotate(180deg);
+    }
+
+    .desplegable{
+        position:absolute;
+        right:0;
+        top:calc(100% + 8px);
+        min-width:240px;
+        background:var(--fondo);
+        border:1px solid var(--borde);
+        border-radius:14px;
+        box-shadow:0 14px 40px rgba(20,10,40,0.25);
+        padding:8px;
+        z-index:100;
+    }
+
+    .desplegable .quien{
+        padding:8px 12px 10px 12px;
+        border-bottom:1px solid var(--borde);
+        margin-bottom:6px;
+    }
+
+    .desplegable .quien strong{
+        display:block;
+        font-size:15px;
+        color:var(--tinta);
+    }
+
+    .desplegable .quien span{
+        font-size:12px;
+        color:var(--tinta-gris);
+    }
+
+    .menu .desplegable a{
+        display:block;
+        margin:0;
+        padding:9px 12px;
+        border-radius:9px;
+        font-weight:normal;
+        font-size:14.5px;
+        color:var(--tinta);
+    }
+
+    .menu .desplegable a:hover{
+        background:var(--superficie);
+        color:var(--tinta);
+    }
+
+    .desplegable .separador{
+        border-top:1px solid var(--borde);
+        margin:6px 0;
+    }
+
+    .menu .desplegable a.salir{
+        color:#B03A3A;
+        font-weight:bold;
+    }
+
+    /* Interruptor de modo oscuro */
+    .fila-tema{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        padding:9px 12px;
+        border-radius:9px;
+        font-size:14.5px;
+        color:var(--tinta);
+        cursor:pointer;
+        user-select:none;
+    }
+
+    .fila-tema:hover{
+        background:var(--superficie);
+    }
+
+    .interruptor-tema{
+        appearance:none;
+        -webkit-appearance:none;
+        position:relative;
+        width:44px;
+        height:24px;
+        margin:0;
+        flex-shrink:0;
+        border-radius:999px;
+        background:var(--tinta-gris);
+        cursor:pointer;
+        transition:background 0.2s;
+    }
+
+    .interruptor-tema::before{
+        content:"";
+        position:absolute;
+        top:3px;
+        left:3px;
+        width:18px;
+        height:18px;
+        border-radius:50%;
+        background:white;
+        transition:transform 0.2s;
+    }
+
+    .interruptor-tema:checked{
+        background:var(--lima-fuerte);
+    }
+
+    .interruptor-tema:checked::before{
+        transform:translateX(20px);
+    }
+
+    .interruptor-tema:focus-visible{
+        outline:2px solid var(--morado-fuerte);
+        outline-offset:2px;
+    }
+
+    /* Para visitantes: solo el interruptor, con la luna */
+    .tema-visitante{
+        display:flex;
+        align-items:center;
+        gap:6px;
+        margin-left:20px;
+        font-size:15px;
+        cursor:pointer;
     }
 
 
@@ -530,6 +729,11 @@ ESTILOS = """
     .titulo-seccion p{
         margin:5px 0 0 0;
         color:var(--tinta-suave);
+    }
+
+    .titulo-seccion p a{
+        color:var(--morado-fuerte);
+        font-weight:bold;
     }
 
     .contador{
@@ -1294,6 +1498,14 @@ ESTILOS = """
             font-size:13px;
         }
 
+        .usuario, .tema-visitante{
+            margin-left:12px;
+        }
+
+        .usuario .nombre-usuario{
+            display:none;
+        }
+
         .titulo-seccion{
             flex-direction:column;
             align-items:flex-start;
@@ -1340,29 +1552,54 @@ def cabecera(titulo):
 
     # El menú cambia según quién haya iniciado sesión
     yo = usuario()
+
+    interruptor = '<input type="checkbox" class="interruptor-tema" role="switch" aria-label="Modo oscuro">'
+
     if yo is None:
         menu = """
             <a href="/entrar?tipo=paciente">Buscar psicólogo</a>
             <a href="/panel">Soy psicólogo/a</a>
             <a href="/contacto">Contacto</a>
-            <a href="/entrar">Entrar</a>"""
-    elif yo["tipo"] == "admin":
-        menu = """
-            <a href="/">Ver la web</a>
-            <a href="/admin">Administración</a>
-            <a href="/salir">Salir</a>"""
-    elif yo["tipo"] == "psicologo":
-        menu = """
-            <a href="/panel">Mi panel</a>
-            <a href="/agenda">Mi agenda</a>
-            <a href="/perfil">Mi perfil</a>
-            <a href="/salir">Salir</a>"""
+            <a href="/entrar">Entrar</a>
+            <label class="tema-visitante" title="Modo oscuro">🌙 """ + interruptor + """</label>"""
     else:
+        # Enlaces principales (a la vista) y opciones del usuario (en el desplegable)
+        if yo["tipo"] == "admin":
+            principales = '<a href="/admin">Administración</a>'
+            opciones = [("/admin", "Administración"), ("/", "Ver la web"), ("/cuenta", "Mi cuenta")]
+            rol = "Administrador"
+        elif yo["tipo"] == "psicologo":
+            principales = '<a href="/panel">Mi panel</a><a href="/agenda">Mi agenda</a>'
+            opciones = [("/panel", "Mi panel"), ("/agenda", "Mi agenda"), ("/perfil", "Mi perfil"),
+                        ("/cuenta", "Mi cuenta"), ("/mis-datos", "Descargar mis datos")]
+            rol = "Psicólogo/a"
+        else:
+            principales = '<a href="/#buscar">Buscar psicólogo</a><a href="/contacto">Contacto</a>'
+            opciones = [("/mis-solicitudes", "Mis solicitudes"), ("/cuenta", "Mi cuenta"),
+                        ("/mis-datos", "Descargar mis datos")]
+            rol = "Paciente"
+
+        enlaces = "".join(f'<a href="{url}">{texto}</a>' for url, texto in opciones)
+        nombre = escape(yo["nombre"])
+        primer_nombre = escape(yo["nombre"].split()[0]) if yo["nombre"].split() else ""
+
         menu = """
-            <a href="/#buscar">Buscar psicólogo</a>
-            <a href="/mis-solicitudes">Mis solicitudes</a>
-            <a href="/contacto">Contacto</a>
-            <a href="/salir">Salir (""" + escape(yo["nombre"].split()[0]) + """)</a>"""
+            """ + principales + """
+            <details class="usuario">
+                <summary aria-label="Menú de usuario">
+                    <span class="inicial">""" + escape(iniciales(yo["nombre"])[:1]) + """</span>
+                    <span class="nombre-usuario">""" + primer_nombre + """</span>
+                    <span class="flecha">▾</span>
+                </summary>
+                <div class="desplegable">
+                    <div class="quien"><strong>""" + nombre + """</strong><span>""" + rol + """</span></div>
+                    """ + enlaces + """
+                    <div class="separador"></div>
+                    <label class="fila-tema">🌙 Modo oscuro """ + interruptor + """</label>
+                    <div class="separador"></div>
+                    <a href="/salir" class="salir">Salir</a>
+                </div>
+            </details>"""
 
     return """
 <!doctype html>
@@ -1392,6 +1629,13 @@ def cabecera(titulo):
     <meta property="og:locale" content="es_ES">
     <meta name="twitter:card" content="summary_large_image">
 
+    <script>
+        try {
+            var tema = localStorage.getItem("tema");
+            if (tema === "claro" || tema === "oscuro") document.documentElement.setAttribute("data-tema", tema);
+        } catch (e) {}
+    </script>
+
     <link rel="icon" type="image/png" href="/logo/favicon-64.png">
     <link href="https://fonts.googleapis.com/css2?family=Carlito:wght@400;700&display=swap" rel="stylesheet">
 
@@ -1414,6 +1658,48 @@ def cabecera(titulo):
 
     </div>
 </header>
+
+<script>
+
+    // -------------------------------
+    // MODO OSCURO (interruptor)
+    // -------------------------------
+
+    function temaActual(){
+        let elegido = document.documentElement.getAttribute("data-tema");
+        if (elegido) return elegido;
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "oscuro" : "claro";
+    }
+
+    document.querySelectorAll(".interruptor-tema").forEach(function(interruptor){
+
+        interruptor.checked = temaActual() == "oscuro";
+
+        interruptor.onchange = function(){
+            let tema = interruptor.checked ? "oscuro" : "claro";
+            document.documentElement.setAttribute("data-tema", tema);
+            try { localStorage.setItem("tema", tema); } catch (e) {}
+        };
+
+    });
+
+    // -------------------------------
+    // MENÚ DEL USUARIO: se cierra al hacer clic fuera o con Escape
+    // -------------------------------
+
+    document.addEventListener("click", function(evento){
+        document.querySelectorAll("details.usuario[open]").forEach(function(menu){
+            if (!menu.contains(evento.target)) menu.removeAttribute("open");
+        });
+    });
+
+    document.addEventListener("keydown", function(evento){
+        if (evento.key == "Escape") {
+            document.querySelectorAll("details.usuario[open]").forEach(function(menu){ menu.removeAttribute("open"); });
+        }
+    });
+
+</script>
 """
 
 
@@ -3972,6 +4258,134 @@ def mis_datos():
     respuesta.headers["Content-Disposition"] = "attachment; filename=mis-datos-encuentrame.json"
     respuesta.headers["Cache-Control"] = "no-store"
     return respuesta
+
+
+# -------------------------------------------------
+# MI CUENTA (configuración del usuario)
+# -------------------------------------------------
+
+@aplicacion.route("/cuenta", methods=["GET", "POST"])
+def cuenta():
+
+    yo = usuario()
+    if yo is None:
+        return redirect("/entrar")
+
+    tabla = TABLAS[yo["tipo"]]
+    error = ""
+    aviso = ""
+
+    conexion = conectar()
+    cursor = conexion.cursor()
+    cursor.execute("SELECT nombre, email, password_hash FROM " + tabla + " WHERE id = %s", (yo["id"],))
+    fila = cursor.fetchone()
+
+    if fila is None:
+        cursor.close()
+        conexion.close()
+        session.clear()
+        return redirect("/entrar")
+
+    # ---------- Cambiar la contraseña ----------
+    if request.method == "POST":
+
+        actual = request.form.get("actual", "")
+        nueva = request.form.get("nueva", "")
+        repetida = request.form.get("repetida", "")
+
+        # Máximo 5 intentos con la contraseña actual mal en 15 minutos
+        claves = ["cuenta:" + yo["tipo"] + ":" + str(yo["id"])]
+
+        if esta_bloqueado(claves):
+            error = "Demasiados intentos. Espera " + str(MINUTOS_BLOQUEO) + " minutos y vuelve a intentarlo."
+        elif not fila[2] or not check_password_hash(fila[2], actual):
+            apuntar_fallo(claves)
+            error = "La contraseña actual no es correcta."
+        elif len(nueva) < 8:
+            error = "La nueva contraseña debe tener al menos 8 caracteres."
+        elif nueva != repetida:
+            error = "Las dos contraseñas nuevas no coinciden."
+        elif nueva == actual:
+            error = "La nueva contraseña tiene que ser distinta de la actual."
+        else:
+            cursor.execute(
+                "UPDATE " + tabla + " SET password_hash = %s WHERE id = %s",
+                (generate_password_hash(nueva), yo["id"])
+            )
+            conexion.commit()
+            intentos_fallidos.pop(claves[0], None)
+            aviso = "Contraseña cambiada."
+
+    cursor.close()
+    conexion.close()
+
+    rol = {"paciente": "Paciente", "psicologo": "Psicólogo/a", "admin": "Administrador"}[yo["tipo"]]
+
+    # Enlaces según el tipo de cuenta
+    extra = ""
+    if yo["tipo"] == "psicologo":
+        extra = '<p class="cambiar"><a href="/perfil">Editar mi perfil (foto, especialidades, presentación)</a></p>'
+    if yo["tipo"] in ("paciente", "psicologo"):
+        extra += ('<p class="cambiar"><a href="/mis-datos">Descargar mis datos</a> · '
+                  '<a class="enlace-peligro" href="/eliminar-cuenta">Eliminar mi cuenta</a></p>')
+
+    cadena = cabecera("Mi cuenta — Encuéntrame") + """
+
+<main class="contenedor">
+
+    <div class="caja-acceso">
+
+        <h2>Mi cuenta</h2>
+"""
+
+    if aviso:
+        cadena += '        <div class="aviso" style="margin:0 0 16px 0">✓ ' + escape(aviso) + '</div>\n'
+    if error:
+        cadena += '        <div class="error">' + escape(error) + '</div>\n'
+
+    cadena += """
+        <div class="campo">
+            <label>Nombre</label>
+            <div>""" + escape(fila[0]) + """</div>
+        </div>
+
+        <div class="campo">
+            <label>Correo electrónico</label>
+            <div>""" + escape(fila[1]) + """</div>
+        </div>
+
+        <div class="campo">
+            <label>Tipo de cuenta</label>
+            <div>""" + rol + """</div>
+        </div>
+
+        <h3 style="margin:26px 0 12px 0">Cambiar la contraseña</h3>
+
+        <form method="post" action="/cuenta">
+            <div class="campo">
+                <label>Contraseña actual</label>
+                <input type="password" name="actual" required autocomplete="current-password">
+            </div>
+            <div class="campo">
+                <label>Nueva contraseña</label>
+                <input type="password" name="nueva" required minlength="8" autocomplete="new-password">
+                <div class="pista">Mínimo 8 caracteres.</div>
+            </div>
+            <div class="campo">
+                <label>Repite la nueva contraseña</label>
+                <input type="password" name="repetida" required minlength="8" autocomplete="new-password">
+            </div>
+            <button class="boton" style="width:100%">Guardar contraseña</button>
+        </form>
+
+        """ + extra + """
+
+    </div>
+
+</main>
+""" + pie()
+
+    return cadena
 
 
 # Ejecuto la aplicación

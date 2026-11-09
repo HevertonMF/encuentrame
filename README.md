@@ -53,6 +53,11 @@ Aplicación web para ayudar a las personas a encontrar al psicólogo que mejor s
 - Al paciente: cuando el psicólogo marca su solicitud como contactada.
 - Los correos no incluyen el texto de las solicitudes, solo un enlace a la web.
 
+**Cuenta de usuario**
+- Menú desplegable con todas las opciones del usuario y «Salir» al final.
+- «Mi cuenta»: datos de la cuenta y cambio de contraseña (con límite de intentos).
+- Interruptor de **modo oscuro** (se recuerda en el navegador; si no se toca, sigue al sistema).
+
 **Privacidad (RGPD)**
 - Página `/privacidad`, casilla de aceptación en el registro y el contacto (se guarda la fecha) y botón «Descargar mis datos» (JSON).
 
